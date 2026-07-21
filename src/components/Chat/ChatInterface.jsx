@@ -379,8 +379,7 @@ const ChatInterface = () => {
     { icon: <FaClock />, label: t('responseTime'), value: '< 100ms' },
     { icon: <FaDatabase />, label: t('messages'), value: messages.length },
   ];
-# Update the handleVoiceClick in ChatInterface.jsx
-# Replace with this simpler version:
+
 
 const handleVoiceClick = () => {
   if (!voiceInputEnabled) {
