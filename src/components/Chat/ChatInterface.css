@@ -527,3 +527,37 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     animation: none !important;
   }
 }
+.voice-hint {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.voice-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.voice-btn.recording {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+  animation: pulse-voice 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse-voice {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.voice-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--danger);
+  animation: voice-pulse-ring 1.3s ease-out infinite;
+}
+
+@keyframes voice-pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
