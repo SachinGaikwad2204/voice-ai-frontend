@@ -4,6 +4,7 @@
   "devCommand": "npm start",
   "installCommand": "npm install",
   "env": {
+    "REACT_APP_API_URL": "https://ai-ml-voice-assistant.onrender.com/api/voice",
     "CI": "false",
     "DISABLE_ESLINT_PLUGIN": "true"
   }
