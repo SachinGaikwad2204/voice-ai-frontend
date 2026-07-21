@@ -561,3 +561,78 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   0% { transform: scale(0.9); opacity: 0.8; }
   100% { transform: scale(1.5); opacity: 0; }
 }
+/* Voice button styles */
+.voice-btn {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.18s ease;
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--cyan);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+.voice-btn:hover:not(.disabled) {
+  background: var(--cyan);
+  color: #06121a;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.voice-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.voice-btn.recording {
+  background: #ff4d6d;
+  color: #fff;
+  border-color: #ff4d6d;
+  animation: pulse-voice 1.2s ease-in-out infinite;
+}
+
+.voice-btn.recording:hover {
+  background: #ff4d6d;
+  box-shadow: 0 0 30px rgba(255, 77, 109, 0.4);
+}
+
+@keyframes pulse-voice {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.voice-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #ff4d6d;
+  animation: voice-pulse-ring 1.3s ease-out infinite;
+}
+
+@keyframes voice-pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.voice-hint {
+  color: var(--cyan);
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.voice-hint.listening {
+  color: #ff4d6d;
+  animation: pulse-text 1s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

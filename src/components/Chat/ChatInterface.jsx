@@ -380,15 +380,35 @@ const ChatInterface = () => {
     { icon: <FaDatabase />, label: t('messages'), value: messages.length },
   ];
 
-  const handleVoiceClick = () => {
-    if (!voiceInputEnabled) return;
-    if (voice.isListening) {
-      voice.stopListening();
-    } else {
-      voice.cancelSpeaking();
-      voice.startListening();
-    }
-  };
+ // Replace the handleVoiceClick function with this:
+
+const handleVoiceClick = () => {
+  if (!voiceInputEnabled) {
+    alert('Voice input is disabled. Please enable it in Settings.');
+    return;
+  }
+  
+  if (voice.isListening) {
+    voice.stopListening();
+    return;
+  }
+  
+  // Check if microphone is available
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Your browser does not support microphone access. Please use Chrome or Edge.');
+    return;
+  }
+  
+  // Check if Speech Recognition is available
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Your browser does not support voice recognition. Please use Chrome or Edge.');
+    return;
+  }
+  
+  // Start listening
+  voice.cancelSpeaking();
+  voice.startListening();
+};
 
   const toggleSidebar = () => setIsSidebarOpen((v) => !v);
   const toggleSettings = () => setIsSettingsOpen((v) => !v);

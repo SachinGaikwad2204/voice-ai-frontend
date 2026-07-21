@@ -10,6 +10,7 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
   const [supported, setSupported] = useState(false);
   const recognitionRef = useRef(null);
   const onResultRef = useRef(onResult);
+  const restartTimeoutRef = useRef(null);
   onResultRef.current = onResult;
 
   useEffect(() => {
@@ -23,18 +24,37 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     if (!SpeechRecognitionAPI) return undefined;
     
     const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = false;
+    recognition.continuous = true; // Keep listening
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.lang = lang;
+    recognition.timeout = 5000; // 5 seconds timeout
+
+    let finalTranscript = '';
 
     recognition.onresult = (event) => {
-      const result = event.results[event.results.length - 1];
-      if (result.isFinal) {
-        const transcript = result[0].transcript;
-        console.log('🎤 Voice input:', transcript);
-        onResultRef.current?.(transcript);
+      let interimTranscript = '';
+      let newFinalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          newFinalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      if (newFinalTranscript) {
+        finalTranscript = newFinalTranscript;
+        console.log('🎤 Voice input (final):', finalTranscript);
+        onResultRef.current?.(finalTranscript);
+        // Stop listening after getting final result
+        recognition.stop();
         setIsListening(false);
+        finalTranscript = '';
+      } else if (interimTranscript) {
+        console.log('🎤 Voice input (interim):', interimTranscript);
       }
     };
 
@@ -51,25 +71,47 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
 
     recognition.onerror = (event) => {
       console.error('🎤 Voice recognition error:', event.error);
-      setIsListening(false);
-      setVolumeLevel(0);
       
-      if (event.error === 'not-allowed') {
-        console.warn('Microphone access denied. Please allow microphone access.');
-      } else if (event.error === 'no-speech') {
-        console.warn('No speech detected. Please try again.');
+      if (event.error === 'no-speech') {
+        console.log('🔇 No speech detected - please try again');
+        // Restart listening after brief delay
+        if (restartTimeoutRef.current) {
+          clearTimeout(restartTimeoutRef.current);
+        }
+        restartTimeoutRef.current = setTimeout(() => {
+          if (isListening) {
+            try {
+              recognition.stop();
+              setTimeout(() => {
+                if (isListening) {
+                  recognition.start();
+                  console.log('🔄 Restarted listening');
+                }
+              }, 300);
+            } catch (e) {
+              console.warn('Restart error:', e);
+            }
+          }
+        }, 1000);
+      } else if (event.error === 'not-allowed') {
+        console.warn('⚠️ Microphone access denied');
+      } else if (event.error === 'audio-capture') {
+        console.warn('⚠️ No microphone found');
       }
     };
 
     recognitionRef.current = recognition;
     return () => {
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+      }
       recognition.onresult = null;
       recognition.onstart = null;
       recognition.onend = null;
       recognition.onerror = null;
       try { recognition.abort(); } catch (e) { /* noop */ }
     };
-  }, [lang]);
+  }, [lang, isListening]);
 
   useEffect(() => {
     if (!isListening) {
@@ -93,15 +135,27 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     }
 
     try {
+      // Request microphone permission first
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then(() => {
+          // Check if browser supports speech recognition
+          if (!SpeechRecognitionAPI) {
+            alert('Your browser does not support voice recognition. Please use Chrome or Edge.');
+            return;
+          }
+          
           recognition.lang = lang;
+          recognition.continuous = true;
+          recognition.interimResults = true;
           recognition.start();
           console.log('🎤 Started listening...');
         })
         .catch((err) => {
           console.error('Microphone access denied:', err);
-          alert('Please allow microphone access to use voice commands.');
+          alert('Please allow microphone access to use voice commands.\n\n' +
+                '1. Click the microphone icon in the address bar\n' +
+                '2. Select "Allow"\n' +
+                '3. Refresh the page and try again');
         });
     } catch (e) {
       console.error('Error starting voice recognition:', e);
@@ -124,7 +178,7 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang;
-    utter.rate = 1.0;
+    utter.rate = 0.9;
     utter.pitch = 1;
     
     utter.onstart = () => {
