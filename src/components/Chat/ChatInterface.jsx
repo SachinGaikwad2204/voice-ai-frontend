@@ -136,7 +136,6 @@ const ChatInterface = () => {
       id: Date.now(),
       role: 'user',
       content: messageText,
-      language: language,
       timestamp: new Date().toLocaleTimeString()
     };
 
@@ -164,7 +163,6 @@ const ChatInterface = () => {
         role: 'assistant',
         content: responseContent,
         intent: response.intent,
-        language: language,
         timestamp: new Date().toLocaleTimeString()
       };
       setMessages(prev => [...prev, assistantMessage]);
@@ -187,7 +185,6 @@ const ChatInterface = () => {
         role: 'assistant',
         content: 'Sorry, I encountered an error. Please try again.',
         isError: true,
-        language: language,
         timestamp: new Date().toLocaleTimeString()
       }]);
     } finally {
@@ -452,9 +449,7 @@ const ChatInterface = () => {
                   </div>
                   <div className="message-content-wrapper">
                     <div className="message-content">
-                      <div className="message-text" data-language={msg.language || language}>
-                        {msg.content}
-                      </div>
+                      <div className="message-text">{msg.content}</div>
                       {msg.intent && (
                         <div className="message-intent">
                           <span className="intent-label">🎯 Intent</span>
@@ -532,7 +527,6 @@ const ChatInterface = () => {
               onKeyDown={handleKeyDown}
               placeholder={isRecording ? '🔴 ' + t('listening') : t('typeMessage')}
               className="chat-input"
-              data-language={language}
               disabled={isLoading}
             />
 
