@@ -40,6 +40,7 @@ import {
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { voiceApi } from '../../services/api';
+import Sidebar from '../Sidebar/Sidebar';
 import './ChatInterface.css';
 
 const ChatInterface = () => {
@@ -129,7 +130,6 @@ const ChatInterface = () => {
     }
   };
 
-  // FIXED: Use response.response from backend
   const sendMessage = useCallback(async (messageText) => {
     if (!messageText || !messageText.trim()) return;
 
@@ -157,7 +157,6 @@ const ChatInterface = () => {
         setSessionId(response.sessionId);
       }
 
-      // FIX: Use response.response (the actual response message)
       const responseContent = response.response || response.message || "I'm not sure how to respond to that.";
 
       const assistantMessage = {
@@ -213,32 +212,9 @@ const ChatInterface = () => {
     setShowQuickActions(true);
   };
 
-  const quickActions = [
-    { icon: <FaHandPeace />, label: t('sayHello'), text: 'Hello!', color: '#667eea' },
-    { icon: <FaLaugh />, label: t('tellJoke'), text: 'Tell me a joke', color: '#f093fb' },
-    { icon: <FaClock />, label: t('whatTime'), text: 'What time is it?', color: '#4facfe' },
-    { icon: <FaCalculator />, label: t('calculate'), text: 'Calculate 25 * 4', color: '#43e97b' },
-    { icon: <FaSearch />, label: t('search'), text: 'Search for AI', color: '#fa709a' },
-    { icon: <FaMusic />, label: t('playMusic'), text: 'Play some music', color: '#f6d365' }
-  ];
-
-  const features = [
-    { icon: <FaBullseye />, label: t('recognizedIntents'), color: '#667eea' },
-    { icon: <FaBrain />, label: t('aiCore'), color: '#764ba2' },
-    { icon: <FaMicrophoneAlt />, label: t('voiceReady'), color: '#f093fb' }
-  ];
-
-  const stats = [
-    { icon: <FaUsers />, label: t('activeUsers'), value: activeUsers },
-    { icon: <FaClock />, label: t('responseTime'), value: '< 100ms' },
-    { icon: <FaDatabase />, label: t('messages'), value: messages.length }
-  ];
-
   const handleVoiceClick = () => {
-    if (isRecording) {
-      setIsRecording(false);
-    } else {
-      setIsRecording(true);
+    setIsRecording(!isRecording);
+    if (!isRecording) {
       setTimeout(() => {
         setIsRecording(false);
         const commands = [
@@ -264,15 +240,26 @@ const ChatInterface = () => {
     setIsSettingsOpen(!isSettingsOpen);
   };
 
-  const particles = Array.from({ length: 30 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 3 + 1,
-    duration: Math.random() * 15 + 10,
-    delay: Math.random() * 5,
-    color: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#f6d365'][Math.floor(Math.random() * 6)]
-  }));
+  const quickActions = [
+    { icon: <FaHandPeace />, label: t('sayHello'), text: 'Hello!', color: '#667eea' },
+    { icon: <FaLaugh />, label: t('tellJoke'), text: 'Tell me a joke', color: '#f093fb' },
+    { icon: <FaClock />, label: t('whatTime'), text: 'What time is it?', color: '#4facfe' },
+    { icon: <FaCalculator />, label: t('calculate'), text: 'Calculate 25 * 4', color: '#43e97b' },
+    { icon: <FaSearch />, label: t('search'), text: 'Search for AI', color: '#fa709a' },
+    { icon: <FaMusic />, label: t('playMusic'), text: 'Play some music', color: '#f6d365' }
+  ];
+
+  const features = [
+    { icon: <FaBullseye />, label: t('recognizedIntents'), color: '#667eea' },
+    { icon: <FaBrain />, label: t('aiCore'), color: '#764ba2' },
+    { icon: <FaMicrophoneAlt />, label: t('voiceReady'), color: '#f093fb' }
+  ];
+
+  const stats = [
+    { icon: <FaUsers />, label: t('activeUsers'), value: activeUsers },
+    { icon: <FaClock />, label: t('responseTime'), value: '< 100ms' },
+    { icon: <FaDatabase />, label: t('messages'), value: messages.length }
+  ];
 
   const languageNames = {
     en: 'English',
@@ -296,97 +283,15 @@ const ChatInterface = () => {
 
   return (
     <div className="app-container">
-      <div className="particles-container">
-        {particles.map((p) => (
-          <div
-            key={p.id}
-            className="particle"
-            style={{
-              left: p.x + '%',
-              top: p.y + '%',
-              width: p.size,
-              height: p.size,
-              background: p.color,
-            }}
-          />
-        ))}
-      </div>
-
-      <aside className={'sidebar ' + (isSidebarOpen ? 'open' : '')}>
-        <div className="sidebar-header">
-          <div className="logo-container">
-            <div className="logo-icon-wrapper">
-              <FaRocket />
-            </div>
-            <div className="logo-text-wrapper">
-              <span className="logo-title">{t('appName')}</span>
-              <span className="logo-subtitle">
-                <FaGem /> {t('premium')}
-              </span>
-            </div>
-          </div>
-          <button className="new-chat-btn" onClick={createNewSession}>
-            <FaPlus />
-            <span>{t('newChat')}</span>
-          </button>
-        </div>
-
-        <div className="sidebar-content">
-          <div className="sessions-section">
-            <div className="sessions-header">
-              <FaHistory /> {t('recentChats')}
-            </div>
-            <div className="sessions-list">
-              {sessions && sessions.length > 0 ? (
-                sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className={'session-item ' + (currentSession === session.id ? 'active' : '')}
-                    onClick={() => selectSession(session.id)}
-                  >
-                    <FaComments className="session-icon" />
-                    <span className="session-title">{session.title || t('newChat')}</span>
-                    <button
-                      className="session-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteSession(session.id);
-                      }}
-                    >
-                      <FaTrash />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="empty-sessions">
-                  <FaComments />
-                  <p>{t('noChats')}</p>
-                  <span>{t('startChat')}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="sidebar-footer">
-          <button className="sidebar-footer-item" onClick={toggleTheme}>
-            {isDark ? <FaSun /> : <FaMoon />}
-            <span>{isDark ? t('lightMode') : t('darkMode')}</span>
-          </button>
-          <button className="sidebar-footer-item" onClick={toggleSettings}>
-            <FaCog />
-            <span>{t('settings')}</span>
-          </button>
-          <button className="sidebar-footer-item">
-            <FaSignOutAlt />
-            <span>{t('signOut')}</span>
-          </button>
-          <div className="sidebar-footer-item status">
-            <span className="status-dot"></span>
-            <span>{t('ready')}</span>
-          </div>
-        </div>
-      </aside>
+      <Sidebar
+        isOpen={isSidebarOpen}
+        sessions={sessions}
+        currentSession={currentSession}
+        onNewSession={createNewSession}
+        onSelectSession={selectSession}
+        onDeleteSession={deleteSession}
+        onToggleSettings={toggleSettings}
+      />
 
       <div className={'main-chat-area ' + (isSidebarOpen ? 'sidebar-open' : 'sidebar-closed')}>
         <header className="chat-header">
@@ -418,10 +323,11 @@ const ChatInterface = () => {
             {messages.length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">
-                  <FaRobot style={{ fontSize: '5rem' }} />
+                  <FaRobot style={{ fontSize: '4rem' }} />
                 </div>
                 <h1>{t('talkAndListen')}</h1>
                 <p>{t('description')}</p>
+
                 <div className="feature-grid">
                   {features.map((f, i) => (
                     <div key={i} className="feature-card">
@@ -430,6 +336,7 @@ const ChatInterface = () => {
                     </div>
                   ))}
                 </div>
+
                 <div className="stats-grid">
                   {stats.map((s, i) => (
                     <div key={i} className="stat-card">
@@ -469,15 +376,11 @@ const ChatInterface = () => {
 
             {isTyping && (
               <div className="message assistant-message">
-                <div className="message-avatar">
-                  <FaRobot />
-                </div>
+                <div className="message-avatar"><FaRobot /></div>
                 <div className="message-content-wrapper">
                   <div className="message-content">
                     <div className="typing-indicator">
-                      <span></span>
-                      <span></span>
-                      <span></span>
+                      <span></span><span></span><span></span>
                     </div>
                   </div>
                 </div>

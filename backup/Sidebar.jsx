@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   FaPlus,
   FaHistory,
@@ -10,7 +9,7 @@ import {
   FaMoon,
   FaSun,
   FaGem,
-  FaRocket
+  FaRocket,
 } from 'react-icons/fa';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -23,47 +22,28 @@ const Sidebar = ({
   onNewSession,
   onSelectSession,
   onDeleteSession,
-  onToggleSettings
+  onToggleSettings,
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
 
   return (
-    <motion.aside
-      className={'sidebar ' + (isOpen ? 'open' : '')}
-      initial={{ x: -320 }}
-      animate={{ x: isOpen ? 0 : -320 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-    >
+    <aside className={'sidebar ' + (isOpen ? 'open' : '')}>
       <div className="sidebar-header">
-        <motion.div
-          className="logo-container"
-          whileHover={{ scale: 1.02 }}
-        >
-          <motion.div
-            className="logo-icon-wrapper"
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
+        <div className="logo-container">
+          <div className="logo-icon-wrapper">
             <FaRocket />
-          </motion.div>
+          </div>
           <div className="logo-text-wrapper">
             <span className="logo-title">{t('appName')}</span>
-            <span className="logo-subtitle">
-              <FaGem /> {t('premium')}
-            </span>
+            <span className="logo-subtitle"><FaGem /> {t('premium')}</span>
           </div>
-        </motion.div>
+        </div>
 
-        <motion.button
-          className="new-chat-btn"
-          onClick={onNewSession}
-          whileHover={{ scale: 1.02, y: -2 }}
-          whileTap={{ scale: 0.98 }}
-        >
+        <button className="new-chat-btn" onClick={onNewSession}>
           <FaPlus />
           <span>{t('newChat')}</span>
-        </motion.button>
+        </button>
       </div>
 
       <div className="sidebar-content">
@@ -73,15 +53,11 @@ const Sidebar = ({
           </div>
           <div className="sessions-list">
             {sessions && sessions.length > 0 ? (
-              sessions.map((session, index) => (
-                <motion.div
+              sessions.map((session) => (
+                <div
                   key={session.id}
                   className={'session-item ' + (currentSession === session.id ? 'active' : '')}
                   onClick={() => onSelectSession(session.id)}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  whileHover={{ x: 5 }}
                 >
                   <FaComments className="session-icon" />
                   <span className="session-title">{session.title || t('newChat')}</span>
@@ -91,10 +67,11 @@ const Sidebar = ({
                       e.stopPropagation();
                       onDeleteSession(session.id);
                     }}
+                    aria-label="Delete session"
                   >
                     <FaTrash />
                   </button>
-                </motion.div>
+                </div>
               ))
             ) : (
               <div className="empty-sessions">
@@ -108,28 +85,24 @@ const Sidebar = ({
       </div>
 
       <div className="sidebar-footer">
-        <motion.button className="sidebar-footer-item" onClick={toggleTheme} whileHover={{ x: 5 }}>
+        <button className="sidebar-footer-item" onClick={toggleTheme}>
           {isDark ? <FaSun /> : <FaMoon />}
           <span>{isDark ? t('lightMode') : t('darkMode')}</span>
-        </motion.button>
-        <motion.button className="sidebar-footer-item" onClick={onToggleSettings} whileHover={{ x: 5 }}>
+        </button>
+        <button className="sidebar-footer-item" onClick={onToggleSettings}>
           <FaCog />
           <span>{t('settings')}</span>
-        </motion.button>
-        <motion.button className="sidebar-footer-item" whileHover={{ x: 5 }}>
+        </button>
+        <button className="sidebar-footer-item">
           <FaSignOutAlt />
           <span>{t('signOut')}</span>
-        </motion.button>
+        </button>
         <div className="sidebar-footer-item status">
-          <motion.span
-            className="status-dot"
-            animate={{ scale: [1, 1.5, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
+          <span className="status-dot"></span>
           <span>{t('ready')}</span>
         </div>
       </div>
-    </motion.aside>
+    </aside>
   );
 };
 
