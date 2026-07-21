@@ -379,12 +379,12 @@ const ChatInterface = () => {
     { icon: <FaClock />, label: t('responseTime'), value: '< 100ms' },
     { icon: <FaDatabase />, label: t('messages'), value: messages.length },
   ];
-
- // Replace the handleVoiceClick function with this:
+# Update the handleVoiceClick in ChatInterface.jsx
+# Replace with this simpler version:
 
 const handleVoiceClick = () => {
   if (!voiceInputEnabled) {
-    alert('Voice input is disabled. Please enable it in Settings.');
+    alert('Voice input is disabled. Enable it in Settings.');
     return;
   }
   
@@ -393,20 +393,7 @@ const handleVoiceClick = () => {
     return;
   }
   
-  // Check if microphone is available
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert('Your browser does not support microphone access. Please use Chrome or Edge.');
-    return;
-  }
-  
-  // Check if Speech Recognition is available
-  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    alert('Your browser does not support voice recognition. Please use Chrome or Edge.');
-    return;
-  }
-  
   // Start listening
-  voice.cancelSpeaking();
   voice.startListening();
 };
 

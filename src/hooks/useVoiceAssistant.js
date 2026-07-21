@@ -11,12 +11,17 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
   const recognitionRef = useRef(null);
   const onResultRef = useRef(onResult);
   const restartTimeoutRef = useRef(null);
+  const recognitionAttempts = useRef(0);
   onResultRef.current = onResult;
 
   useEffect(() => {
-    setSupported(!!SpeechRecognitionAPI);
-    if (!SpeechRecognitionAPI) {
-      console.warn('Speech recognition not supported in this browser');
+    const isSupported = !!SpeechRecognitionAPI;
+    setSupported(isSupported);
+    if (!isSupported) {
+      console.warn('⚠️ Speech recognition not supported in this browser');
+      console.warn('📌 Please use Chrome, Edge, or Safari');
+    } else {
+      console.log('✅ Speech recognition is supported');
     }
   }, []);
 
@@ -24,79 +29,98 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     if (!SpeechRecognitionAPI) return undefined;
     
     const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = true; // Keep listening
+    recognition.continuous = false;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.lang = lang;
-    recognition.timeout = 5000; // 5 seconds timeout
-
-    let finalTranscript = '';
 
     recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let newFinalTranscript = '';
-
+      console.log('🎤 Result received:', event.results.length);
+      
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const transcript = event.results[i][0].transcript;
-        if (event.results[i].isFinal) {
-          newFinalTranscript += transcript;
+        const result = event.results[i];
+        const transcript = result[0].transcript.trim();
+        
+        if (result.isFinal) {
+          console.log('🎤 Final:', transcript);
+          if (transcript.length > 0) {
+            onResultRef.current?.(transcript);
+          }
+          // Stop listening after getting final result
+          try {
+            recognition.stop();
+          } catch (e) {
+            // Ignore
+          }
+          setIsListening(false);
+          recognitionAttempts.current = 0;
         } else {
-          interimTranscript += transcript;
+          console.log('🎤 Interim:', transcript);
         }
-      }
-
-      if (newFinalTranscript) {
-        finalTranscript = newFinalTranscript;
-        console.log('🎤 Voice input (final):', finalTranscript);
-        onResultRef.current?.(finalTranscript);
-        // Stop listening after getting final result
-        recognition.stop();
-        setIsListening(false);
-        finalTranscript = '';
-      } else if (interimTranscript) {
-        console.log('🎤 Voice input (interim):', interimTranscript);
       }
     };
 
     recognition.onstart = () => {
-      console.log('🎤 Voice recognition started');
+      console.log('🎤 Listening... Speak now!');
       setIsListening(true);
+      recognitionAttempts.current = 0;
     };
 
     recognition.onend = () => {
-      console.log('🎤 Voice recognition ended');
+      console.log('🎤 Stopped listening');
       setIsListening(false);
       setVolumeLevel(0);
     };
 
+    recognition.onsoundstart = () => {
+      console.log('🎤 Sound detected!');
+    };
+
+    recognition.onsoundend = () => {
+      console.log('🎤 Sound ended');
+    };
+
+    recognition.onspeechstart = () => {
+      console.log('🎤 Speech started!');
+    };
+
+    recognition.onspeechend = () => {
+      console.log('🎤 Speech ended');
+    };
+
     recognition.onerror = (event) => {
-      console.error('🎤 Voice recognition error:', event.error);
+      console.error('🎤 Error:', event.error);
       
       if (event.error === 'no-speech') {
-        console.log('🔇 No speech detected - please try again');
-        // Restart listening after brief delay
-        if (restartTimeoutRef.current) {
-          clearTimeout(restartTimeoutRef.current);
-        }
-        restartTimeoutRef.current = setTimeout(() => {
-          if (isListening) {
-            try {
-              recognition.stop();
-              setTimeout(() => {
-                if (isListening) {
-                  recognition.start();
-                  console.log('🔄 Restarted listening');
-                }
-              }, 300);
-            } catch (e) {
-              console.warn('Restart error:', e);
+        recognitionAttempts.current += 1;
+        console.log(`🔇 No speech detected (attempt ${recognitionAttempts.current})`);
+        
+        if (recognitionAttempts.current < 3) {
+          // Try restarting
+          setTimeout(() => {
+            if (isListening) {
+              try {
+                recognition.start();
+                console.log('🔄 Restarted listening');
+              } catch (e) {
+                console.warn('Restart error:', e);
+              }
             }
-          }
-        }, 1000);
+          }, 500);
+        } else {
+          console.log('❌ Too many no-speech attempts. Please click the mic again.');
+          setIsListening(false);
+          recognitionAttempts.current = 0;
+        }
       } else if (event.error === 'not-allowed') {
-        console.warn('⚠️ Microphone access denied');
+        console.warn('⚠️ Microphone access denied. Please allow microphone access.');
+        setIsListening(false);
       } else if (event.error === 'audio-capture') {
-        console.warn('⚠️ No microphone found');
+        console.warn('⚠️ No microphone found. Please connect a microphone.');
+        setIsListening(false);
+      } else if (event.error === 'network') {
+        console.warn('⚠️ Network error. Please check your connection.');
+        setIsListening(false);
       }
     };
 
@@ -109,23 +133,27 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       recognition.onstart = null;
       recognition.onend = null;
       recognition.onerror = null;
+      recognition.onsoundstart = null;
+      recognition.onsoundend = null;
+      recognition.onspeechstart = null;
+      recognition.onspeechend = null;
       try { recognition.abort(); } catch (e) { /* noop */ }
     };
-  }, [lang, isListening]);
+  }, [lang]);
 
   useEffect(() => {
     if (!isListening) {
       setVolumeLevel(0);
       return undefined;
     }
-    const id = setInterval(() => setVolumeLevel(0.35 + Math.random() * 0.65), 120);
+    const id = setInterval(() => setVolumeLevel(0.3 + Math.random() * 0.7), 100);
     return () => clearInterval(id);
   }, [isListening]);
 
   const startListening = useCallback(() => {
     const recognition = recognitionRef.current;
     if (!recognition) {
-      console.warn('Speech recognition not available');
+      console.warn('❌ Speech recognition not available');
       return;
     }
     
@@ -134,31 +162,51 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       return;
     }
 
-    try {
-      // Request microphone permission first
+    recognitionAttempts.current = 0;
+
+    // Check microphone permission first
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
       navigator.mediaDevices.getUserMedia({ audio: true })
-        .then(() => {
-          // Check if browser supports speech recognition
-          if (!SpeechRecognitionAPI) {
-            alert('Your browser does not support voice recognition. Please use Chrome or Edge.');
-            return;
-          }
+        .then((stream) => {
+          // Stop the stream immediately, we just need permission
+          stream.getTracks().forEach(track => track.stop());
+          console.log('✅ Microphone access granted');
           
-          recognition.lang = lang;
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.start();
-          console.log('🎤 Started listening...');
+          // Start recognition
+          try {
+            recognition.lang = lang;
+            recognition.start();
+            console.log('🎤 Started listening... Speak now!');
+          } catch (e) {
+            console.error('Error starting recognition:', e);
+            // If already started, try stopping and restarting
+            try {
+              recognition.stop();
+              setTimeout(() => {
+                recognition.start();
+              }, 200);
+            } catch (e2) {
+              console.error('Could not start recognition:', e2);
+            }
+          }
         })
         .catch((err) => {
-          console.error('Microphone access denied:', err);
-          alert('Please allow microphone access to use voice commands.\n\n' +
-                '1. Click the microphone icon in the address bar\n' +
-                '2. Select "Allow"\n' +
+          console.error('❌ Microphone access denied:', err);
+          alert('🎤 Microphone access is required for voice commands.\n\n' +
+                'Please:\n' +
+                '1. Click the camera/mic icon in your browser address bar\n' +
+                '2. Select "Allow" for microphone access\n' +
                 '3. Refresh the page and try again');
         });
-    } catch (e) {
-      console.error('Error starting voice recognition:', e);
+    } else {
+      // Try starting without permission check (some browsers handle it differently)
+      try {
+        recognition.start();
+        console.log('🎤 Started listening...');
+      } catch (e) {
+        console.error('Error starting recognition:', e);
+        alert('Please allow microphone access in your browser settings.');
+      }
     }
   }, [lang, isListening]);
 
@@ -169,6 +217,7 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       console.warn('Error stopping recognition:', e);
     }
     setIsListening(false);
+    recognitionAttempts.current = 0;
   }, []);
 
   const speak = useCallback((text) => {
@@ -178,21 +227,21 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = lang;
-    utter.rate = 0.9;
+    utter.rate = 0.95;
     utter.pitch = 1;
     
     utter.onstart = () => {
-      console.log('🔊 Speaking:', text);
+      console.log('🔊 Speaking...');
       setIsSpeaking(true);
     };
     
     utter.onend = () => {
-      console.log('🔊 Speaking ended');
+      console.log('🔊 Done speaking');
       setIsSpeaking(false);
     };
     
     utter.onerror = (e) => {
-      console.error('Speech synthesis error:', e);
+      console.error('Speech error:', e);
       setIsSpeaking(false);
     };
     
