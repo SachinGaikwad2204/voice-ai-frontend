@@ -90,7 +90,7 @@ const ChatInterface = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeUsers] = useState(42);
 
-  // ----- Working settings state (persisted) -----
+  // Working settings state (persisted)
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(
     () => localStorage.getItem('voiceInputEnabled') !== 'false'
   );
@@ -116,28 +116,65 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // ===== SESSION HISTORY LOADING =====
   useEffect(() => {
     const savedSessions = localStorage.getItem('voiceAISessions');
     if (savedSessions) {
       try {
         const parsed = JSON.parse(savedSessions);
-        setSessions(parsed);
-        if (parsed.length > 0) setCurrentSession(parsed[0].id);
-      } catch (e) { /* ignore corrupt data */ }
+        if (parsed && parsed.length > 0) {
+          setSessions(parsed);
+          setCurrentSession(parsed[0].id);
+          setMessages(parsed[0].messages || []);
+          setSessionId(parsed[0].id);
+          setShowQuickActions((parsed[0].messages?.length || 0) === 0);
+          console.log('📂 Sessions loaded:', parsed.length);
+        } else {
+          // Create default session if no sessions exist
+          createNewSession();
+        }
+      } catch (e) {
+        console.error('Error loading sessions:', e);
+        createNewSession();
+      }
+    } else {
+      // Create default session if no saved sessions
+      createNewSession();
     }
   }, []);
 
+  // ===== AUTO-SAVE SESSIONS =====
   useEffect(() => {
     if (autoSave && sessions.length > 0) {
       localStorage.setItem('voiceAISessions', JSON.stringify(sessions));
+      console.log('💾 Sessions auto-saved:', sessions.length);
     }
   }, [sessions, autoSave]);
 
-  useEffect(() => { localStorage.setItem('voiceInputEnabled', String(voiceInputEnabled)); }, [voiceInputEnabled]);
-  useEffect(() => { localStorage.setItem('soundEnabled', String(soundEnabled)); }, [soundEnabled]);
-  useEffect(() => { localStorage.setItem('autoSave', String(autoSave)); }, [autoSave]);
+  // ===== SAVE ON PAGE UNLOAD =====
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (sessions.length > 0 && autoSave) {
+        localStorage.setItem('voiceAISessions', JSON.stringify(sessions));
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [sessions, autoSave]);
 
-  // ----- sendMessage defined before the voice hook needs it in callback -----
+  useEffect(() => {
+    localStorage.setItem('voiceInputEnabled', String(voiceInputEnabled));
+  }, [voiceInputEnabled]);
+  
+  useEffect(() => {
+    localStorage.setItem('soundEnabled', String(soundEnabled));
+  }, [soundEnabled]);
+  
+  useEffect(() => {
+    localStorage.setItem('autoSave', String(autoSave));
+  }, [autoSave]);
+
+  // sendMessage defined before the voice hook needs it in callback
   const sendMessageRef = useRef();
 
   const voice = useVoiceAssistant({
@@ -164,6 +201,11 @@ const ChatInterface = () => {
     setMessages([]);
     setSessionId(null);
     setShowQuickActions(true);
+    // Save immediately
+    if (autoSave) {
+      localStorage.setItem('voiceAISessions', JSON.stringify([newSession, ...sessions]));
+    }
+    console.log('📂 New session created:', newSession.id);
   };
 
   const selectSession = (id) => {
@@ -173,22 +215,28 @@ const ChatInterface = () => {
       setMessages(session.messages || []);
       setSessionId(id);
       setShowQuickActions((session.messages?.length || 0) === 0);
+      console.log('📂 Session selected:', session.title);
     }
   };
 
   const deleteSession = (id) => {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
+    const updatedSessions = sessions.filter((s) => s.id !== id);
+    setSessions(updatedSessions);
+    if (autoSave) {
+      localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
+    }
     if (currentSession === id) {
-      const remaining = sessions.filter((s) => s.id !== id);
-      if (remaining.length > 0) {
-        selectSession(remaining[0].id);
+      if (updatedSessions.length > 0) {
+        selectSession(updatedSessions[0].id);
       } else {
         setMessages([]);
         setCurrentSession(null);
         setSessionId(null);
         setShowQuickActions(true);
+        createNewSession();
       }
     }
+    console.log('🗑️ Session deleted:', id);
   };
 
   const sendMessage = useCallback(async (messageText) => {
@@ -227,17 +275,49 @@ const ChatInterface = () => {
       };
       setMessages((prev) => [...prev, assistantMessage]);
 
-      setSessions((prev) => prev.map((s) => {
-        if (s.id === currentSession || s.id === sessionId) {
-          const updatedMessages = [...(s.messages || []), userMessage, assistantMessage];
-          return {
-            ...s,
-            messages: updatedMessages,
-            title: updatedMessages.length > 0 ? updatedMessages[0].content.substring(0, 30) : t('newChat'),
+      // Update sessions with new messages
+      setSessions((prev) => {
+        const sessionExists = prev.some((s) => s.id === currentSession || s.id === sessionId);
+        
+        if (sessionExists) {
+          const updatedSessions = prev.map((s) => {
+            if (s.id === currentSession || s.id === sessionId) {
+              const updatedMessages = [...(s.messages || []), userMessage, assistantMessage];
+              return {
+                ...s,
+                messages: updatedMessages,
+                title: updatedMessages.length > 0 
+                  ? (updatedMessages[0].content.length > 30 
+                    ? updatedMessages[0].content.substring(0, 30) + '...' 
+                    : updatedMessages[0].content)
+                  : t('newChat'),
+              };
+            }
+            return s;
+          });
+          
+          // Auto-save
+          if (autoSave) {
+            localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
+          }
+          return updatedSessions;
+        } else {
+          // Create new session if none exists
+          const newSession = {
+            id: Date.now().toString(),
+            title: messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText,
+            messages: [userMessage, assistantMessage],
+            createdAt: new Date().toISOString(),
           };
+          const updatedSessions = [newSession, ...prev];
+          if (autoSave) {
+            localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
+          }
+          setCurrentSession(newSession.id);
+          setSessionId(newSession.id);
+          return updatedSessions;
         }
-        return s;
-      }));
+      });
 
       if (soundEnabled) {
         voice.speak(responseContent);
@@ -256,8 +336,7 @@ const ChatInterface = () => {
       setIsLoading(false);
       setIsTyping(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, currentSession, t, language, soundEnabled]);
+  }, [sessionId, currentSession, t, language, soundEnabled, voice, autoSave]);
 
   sendMessageRef.current = sendMessage;
 
