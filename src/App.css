@@ -1,38 +1,225 @@
-.App {
-  text-align: center;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  transition: var(--transition);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+.app {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  background: var(--bg-primary);
+  transition: var(--transition);
+}
+
+[data-theme="dark"] .app {
+  background: #0f0f1a;
+}
+
+/* ===== Variables ===== */
+:root {
+  --bg-primary: #f0f2f5;
+  --bg-secondary: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --text-primary: #1a1a2e;
+  --text-secondary: #555;
+  --text-muted: #888;
+  --border-color: rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="dark"] {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-glass: rgba(26, 26, 46, 0.9);
+  --text-primary: #e8e8f0;
+  --text-secondary: #a0a0b8;
+  --text-muted: #6a6a80;
+  --border-color: rgba(255, 255, 255, 0.06);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Emoji Support ===== */
+.logo-icon,
+.empty-icon,
+.quick-action-icon,
+.feature-icon,
+.session-emoji {
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'EmojiOne Color', sans-serif !important;
+  font-size: 1.2rem;
+}
+
+/* ===== Animations ===== */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+/* ===== Emoji and Icon Support ===== */
+.logo-icon,
+.empty-icon,
+.quick-action-icon svg,
+.feature-icon svg,
+.session-icon {
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif !important;
+}
+
+/* Force all icons to render properly */
+svg {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.quick-action-icon,
+.feature-icon {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  font-size: 1.2rem;
 }
 
-.App-link {
-  color: #61dafb;
+/* Ensure React Icons are visible */
+.quick-action-icon svg,
+.feature-icon svg {
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+}
+/* ===== Global Emoji Support ===== */
+.logo-icon,
+.empty-icon,
+.quick-action-icon,
+.feature-icon,
+.session-icon,
+.logo-icon-wrapper svg {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', 'Android Emoji', sans-serif !important;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.logo-icon {
+  font-size: 1.8rem !important;
+}
+
+.empty-icon {
+  font-size: 5rem !important;
+}
+
+.quick-action-icon {
+  font-size: 1.3rem !important;
+}
+
+.feature-icon {
+  font-size: 1.3rem !important;
+}
+
+.session-icon {
+  font-size: 1rem !important;
+}
+
+/* Force all emojis to render */
+* {
+  font-family: 'Inter', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', 'Android Emoji', sans-serif;
+}
+
+/* Ensure emojis in buttons and labels */
+button span,
+label span,
+.settings-item span {
+  font-family: inherit;
+}
+
+/* Emoji fallback for older browsers */
+@supports not (font-family: 'Apple Color Emoji') {
+  .logo-icon,
+  .empty-icon,
+  .quick-action-icon,
+  .feature-icon,
+  .session-icon {
+    font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', sans-serif !important;
   }
-  to {
-    transform: rotate(360deg);
+}
+/* ===== Global Emoji Support ===== */
+.logo-icon,
+.empty-icon,
+.quick-action-icon,
+.feature-icon,
+.session-icon,
+.logo-icon-wrapper svg {
+  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', 'Android Emoji', sans-serif !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.logo-icon {
+  font-size: 1.8rem !important;
+}
+
+.empty-icon {
+  font-size: 5rem !important;
+}
+
+.quick-action-icon {
+  font-size: 1.3rem !important;
+}
+
+.feature-icon {
+  font-size: 1.3rem !important;
+}
+
+.session-icon {
+  font-size: 1rem !important;
+}
+
+/* Force all emojis to render */
+* {
+  font-family: 'Inter', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', 'Android Emoji', sans-serif;
+}
+
+/* Ensure emojis in buttons and labels */
+button span,
+label span,
+.settings-item span {
+  font-family: inherit;
+}
+
+/* Emoji fallback for older browsers */
+@supports not (font-family: 'Apple Color Emoji') {
+  .logo-icon,
+  .empty-icon,
+  .quick-action-icon,
+  .feature-icon,
+  .session-icon {
+    font-family: 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', sans-serif !important;
   }
 }

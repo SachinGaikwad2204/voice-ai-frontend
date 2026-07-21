@@ -1,0 +1,60 @@
+/* ===== Language Support ===== */
+/* Hindi - Devanagari */
+[data-language="hi"] {
+  font-family: 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', 'Segoe UI', sans-serif !important;
+}
+
+[data-language="hi"] * {
+  font-family: 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', 'Segoe UI', sans-serif !important;
+}
+
+/* Japanese */
+[data-language="ja"] {
+  font-family: 'Noto Sans JP', 'Yu Gothic', 'Meiryo', 'Segoe UI', sans-serif !important;
+}
+
+[data-language="ja"] * {
+  font-family: 'Noto Sans JP', 'Yu Gothic', 'Meiryo', 'Segoe UI', sans-serif !important;
+}
+
+/* Chinese */
+[data-language="zh"] {
+  font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif !important;
+}
+
+[data-language="zh"] * {
+  font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif !important;
+}
+
+/* Korean */
+[data-language="ko"] {
+  font-family: 'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', sans-serif !important;
+}
+
+[data-language="ko"] * {
+  font-family: 'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', sans-serif !important;
+}
+
+/* Arabic */
+[data-language="ar"] {
+  font-family: 'Noto Sans Arabic', 'Segoe UI', sans-serif !important;
+}
+
+[data-language="ar"] * {
+  font-family: 'Noto Sans Arabic', 'Segoe UI', sans-serif !important;
+}
+
+/* German */
+[data-language="de"] {
+  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+}
+
+/* French */
+[data-language="fr"] {
+  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+}
+
+/* Spanish */
+[data-language="es"] {
+  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+}
