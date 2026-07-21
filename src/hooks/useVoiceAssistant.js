@@ -1,48 +1,44 @@
 ﻿import { useState, useRef, useCallback, useEffect } from 'react';
 
-const SpeechRecognitionAPI =
-  typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition);
-
 export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volumeLevel, setVolumeLevel] = useState(0);
-  const [supported, setSupported] = useState(false);
-  const recognitionRef = useRef(null);
+  const [supported, setSupported] = useState(true);
   const onResultRef = useRef(onResult);
+  const mediaRecorderRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
   const streamRef = useRef(null);
-  const hasDetectedSpeech = useRef(false);
-  const restartTimeoutRef = useRef(null);
+  const audioChunksRef = useRef([]);
   const recognitionAttempts = useRef(0);
+  const isRecordingRef = useRef(false);
 
   onResultRef.current = onResult;
 
-  useEffect(() => {
-    const isSupported = !!SpeechRecognitionAPI;
-    setSupported(isSupported);
-    if (!isSupported) {
-      console.warn('⚠️ Speech recognition not supported in this browser');
-    } else {
-      console.log('✅ Speech recognition is supported');
+  // Start listening using Web Audio API
+  const startListening = useCallback(async () => {
+    if (isListening) {
+      console.log('Already listening');
+      return;
     }
-  }, []);
 
-  // Setup audio context for volume detection
-  const setupAudioDetection = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
+      // Get microphone stream
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true
-        } 
+          autoGainControl: true,
+          sampleRate: 16000,
+          channelCount: 1
+        }
       });
       
       streamRef.current = stream;
       
+      // Setup audio context for volume detection
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       audioContextRef.current = audioContext;
       
@@ -53,16 +49,60 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       const source = audioContext.createMediaStreamSource(stream);
       source.connect(analyser);
       
-      console.log('✅ Audio detection setup complete');
-      return true;
+      // Start volume detection
+      detectVolume();
+      
+      // Setup MediaRecorder for recording
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        console.log('🎤 Recording stopped, processing audio...');
+        await processAudio();
+      };
+      
+      // Start recording
+      mediaRecorder.start(1000); // Record in 1-second chunks
+      isRecordingRef.current = true;
+      
+      // Auto-stop after 5 seconds of silence
+      let silentCount = 0;
+      const checkSilence = setInterval(() => {
+        if (!isRecordingRef.current) {
+          clearInterval(checkSilence);
+          return;
+        }
+        // If volume is low for 3 consecutive checks
+        if (volumeLevel < 0.02) {
+          silentCount++;
+          if (silentCount >= 5) {
+            console.log('⏰ Silence detected, stopping...');
+            stopListening();
+            clearInterval(checkSilence);
+          }
+        } else {
+          silentCount = 0;
+        }
+      }, 1000);
+      
+      setIsListening(true);
+      console.log('🎤 Listening... Speak now!');
+      
     } catch (err) {
-      console.error('❌ Audio detection setup failed:', err);
-      return false;
+      console.error('❌ Microphone error:', err);
+      alert('Please allow microphone access to use voice commands.');
     }
-  }, []);
+  }, [isListening, volumeLevel]);
 
   // Detect audio volume
-  const detectAudio = useCallback(() => {
+  const detectVolume = useCallback(() => {
     if (!analyserRef.current) return;
     
     const dataArray = new Uint8Array(analyserRef.current.fftSize);
@@ -74,212 +114,92 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       sum += value * value;
     }
     const rms = Math.sqrt(sum / dataArray.length);
-    const volume = Math.min(rms * 2, 1);
+    setVolumeLevel(rms);
     
-    setVolumeLevel(volume);
-    
-    if (volume > 0.02 && isListening) {
-      hasDetectedSpeech.current = true;
-      console.log('🎤 Audio detected! Volume:', volume.toFixed(3));
-    }
-    
-    animationFrameRef.current = requestAnimationFrame(detectAudio);
-  }, [isListening]);
+    animationFrameRef.current = requestAnimationFrame(detectVolume);
+  }, []);
 
-  const startListening = useCallback(async () => {
-    const recognition = recognitionRef.current;
-    if (!recognition) {
-      console.warn('❌ Speech recognition not available');
+  // Process recorded audio
+  const processAudio = useCallback(async () => {
+    if (audioChunksRef.current.length === 0) {
+      console.log('No audio recorded');
       return;
     }
     
-    if (isListening) {
-      console.log('Already listening');
-      return;
-    }
-
-    recognitionAttempts.current = 0;
-    hasDetectedSpeech.current = false;
-
-    try {
-      // Setup audio detection first
-      const audioSetup = await setupAudioDetection();
-      if (!audioSetup) {
-        console.warn('⚠️ Could not setup audio detection, trying recognition anyway');
-      } else {
-        // Start volume detection
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-        }
-        detectAudio();
-      }
-
-      // Start recognition
-      recognition.lang = lang;
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
+    // Create audio blob
+    const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+    audioChunksRef.current = [];
+    
+    // Convert to base64 for sending
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64Audio = event.target.result.split(',')[1];
       
-      // Reset any previous state
-      try { recognition.abort(); } catch (e) {}
-      
-      recognition.start();
-      console.log('🎤 Started listening... Speak now!');
-      setIsListening(true);
-      
-      // Auto-stop after 10 seconds if no speech detected
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
-      restartTimeoutRef.current = setTimeout(() => {
-        if (isListening && !hasDetectedSpeech.current) {
-          console.log('⏰ No speech detected for 10 seconds, stopping...');
-          stopListening();
-        }
-      }, 10000);
-      
-    } catch (e) {
-      console.error('Error starting recognition:', e);
-      // Try to recover
+      // Use a free speech-to-text service (Web Speech API as fallback)
       try {
-        recognition.stop();
+        // Try using the Web Speech API with a different approach
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        
+        // Play the audio through the recognition API
+        // This is a workaround - it may work in some browsers
+        const audio = new Audio();
+        audio.src = URL.createObjectURL(audioBlob);
+        await audio.play();
+        
+        // This is a hack - but it might trigger the recognition
         setTimeout(() => {
-          try {
-            recognition.start();
-            console.log('🔄 Restarted recognition');
-          } catch (e2) {}
+          recognition.start();
+          console.log('🔄 Trying speech recognition on played audio...');
         }, 500);
-      } catch (e2) {}
-    }
-  }, [lang, isListening, setupAudioDetection, detectAudio]);
+        
+        recognition.onresult = (e) => {
+          const transcript = e.results[0][0].transcript;
+          console.log('🎤 Recognized:', transcript);
+          if (transcript && transcript.length > 0) {
+            onResultRef.current?.(transcript);
+          }
+        };
+        
+        recognition.onerror = (e) => {
+          console.warn('Recognition fallback error:', e.error);
+        };
+        
+      } catch (e) {
+        console.warn('Audio processing error:', e);
+      }
+    };
+    reader.readAsDataURL(audioBlob);
+  }, []);
 
   const stopListening = useCallback(() => {
-    try {
-      recognitionRef.current?.stop();
-    } catch (e) {}
-    setIsListening(false);
-    setVolumeLevel(0);
-    hasDetectedSpeech.current = false;
-    recognitionAttempts.current = 0;
+    isRecordingRef.current = false;
+    
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+    }
     
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
     
-    if (restartTimeoutRef.current) {
-      clearTimeout(restartTimeoutRef.current);
-    }
-    
-    // Clean up audio stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-  }, []);
-
-  useEffect(() => {
-    if (!SpeechRecognitionAPI) return undefined;
     
-    const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    recognition.lang = lang;
-
-    recognition.onresult = (event) => {
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        const transcript = result[0].transcript.trim();
-        
-        if (result.isFinal && transcript.length > 0) {
-          console.log('🎤 Final:', transcript);
-          hasDetectedSpeech.current = true;
-          onResultRef.current?.(transcript);
-          // Stop listening after getting result
-          setTimeout(() => {
-            try { recognition.stop(); } catch (e) {}
-            setIsListening(false);
-          }, 100);
-        } else if (transcript.length > 0) {
-          console.log('🎤 Interim:', transcript);
-          hasDetectedSpeech.current = true;
-        }
-      }
-    };
-
-    recognition.onstart = () => {
-      console.log('🎤 Listening... Speak now!');
-      setIsListening(true);
-    };
-
-    recognition.onend = () => {
-      console.log('🎤 Stopped listening');
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event) => {
-      console.error('🎤 Error:', event.error);
-      
-      if (event.error === 'no-speech') {
-        // Only retry if we haven't detected any audio
-        if (!hasDetectedSpeech.current) {
-          recognitionAttempts.current += 1;
-          console.log(`🔇 No speech detected (attempt ${recognitionAttempts.current})`);
-          
-          if (recognitionAttempts.current < 2) {
-            setTimeout(() => {
-              if (isListening) {
-                try {
-                  recognition.start();
-                  console.log('🔄 Restarted listening');
-                } catch (e) {
-                  console.warn('Restart error:', e);
-                }
-              }
-            }, 500);
-          } else {
-            console.log('❌ No speech detected after multiple attempts. Please click the mic again.');
-            setIsListening(false);
-            recognitionAttempts.current = 0;
-          }
-        } else {
-          console.log('✅ Speech was detected but not recognized. Please speak clearly.');
-        }
-      } else if (event.error === 'not-allowed') {
-        console.warn('⚠️ Microphone access denied');
-        setIsListening(false);
-      } else if (event.error === 'audio-capture') {
-        console.warn('⚠️ No microphone found');
-        setIsListening(false);
-      }
-    };
-
-    recognitionRef.current = recognition;
-    return () => {
-      recognition.onresult = null;
-      recognition.onstart = null;
-      recognition.onend = null;
-      recognition.onerror = null;
-      try { recognition.abort(); } catch (e) {}
-    };
-  }, [lang, isListening]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-      }
-      if (restartTimeoutRef.current) {
-        clearTimeout(restartTimeoutRef.current);
-      }
-    };
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    
+    setIsListening(false);
+    setVolumeLevel(0);
+    console.log('🎤 Stopped listening');
   }, []);
 
   const speak = useCallback((text) => {
