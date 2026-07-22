@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useCallback } from 'react';
+import React, { createContext, useState, useContext, useCallback, useEffect } from 'react';
 
 const LanguageContext = createContext();
 
@@ -121,6 +121,14 @@ export const LanguageProvider = ({ children }) => {
     setLanguage(lang);
     localStorage.setItem('appLanguage', lang);
   }, []);
+
+  // CRITICAL FIX: without this, the [data-language="hi"] font-family rules in
+  // globals.css never match anything, so Hindi/Japanese/Chinese text renders
+  // in a Latin font with no matching glyphs — showing "?" boxes.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-language', language);
+    document.documentElement.setAttribute('lang', language);
+  }, [language]);
 
   const t = useCallback((key) => {
     return (dict[language] && dict[language][key]) || dict.en[key] || key;

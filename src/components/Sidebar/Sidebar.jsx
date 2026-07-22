@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   FaPlus,
   FaHistory,
@@ -23,23 +23,30 @@ const Sidebar = ({
   onSelectSession,
   onDeleteSession,
   onToggleSettings,
+  onClose, // FIX: real callback prop instead of a broken window CustomEvent
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
 
+  const handleSelect = (id) => {
+    onSelectSession(id);
+    onClose?.(); // auto-close on mobile after picking a session
+  };
+
+  const handleNewSession = () => {
+    onNewSession();
+    onClose?.();
+  };
+
   return (
     <>
-      {/* Mobile overlay */}
-      <div 
-        className={`sidebar-overlay ${isOpen ? 'active' : ''}`} 
-        onClick={() => {
-          // Close sidebar on overlay click - handled by parent via prop
-          if (window.innerWidth <= 768) {
-            document.dispatchEvent(new CustomEvent('closeSidebar'));
-          }
-        }}
+      {/* Mobile backdrop — only rendered/interactive when sidebar is open */}
+      <div
+        className={`sidebar-overlay ${isOpen ? 'active' : ''}`}
+        onClick={() => onClose?.()}
+        aria-hidden={!isOpen}
       />
-      
+
       <aside className={'sidebar ' + (isOpen ? 'open' : '')}>
         <div className="sidebar-header">
           <div className="logo-container">
@@ -52,7 +59,7 @@ const Sidebar = ({
             </div>
           </div>
 
-          <button className="new-chat-btn" onClick={onNewSession}>
+          <button className="new-chat-btn" onClick={handleNewSession}>
             <FaPlus />
             <span>{t('newChat')}</span>
           </button>
@@ -69,7 +76,7 @@ const Sidebar = ({
                   <div
                     key={session.id}
                     className={'session-item ' + (currentSession === session.id ? 'active' : '')}
-                    onClick={() => onSelectSession(session.id)}
+                    onClick={() => handleSelect(session.id)}
                   >
                     <FaComments className="session-icon" />
                     <span className="session-title">{session.title || t('newChat')}</span>

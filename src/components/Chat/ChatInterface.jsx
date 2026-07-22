@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   FaPaperPlane,
   FaMicrophone,
@@ -51,6 +51,8 @@ const LANGUAGE_META = {
   zh: { name: 'Chinese', flag: '🇨🇳' },
 };
 
+const MOBILE_BREAKPOINT = 768;
+
 // The reactive voice orb — the signature "Jarvis" element
 const VoiceOrb = ({ state, volume = 0, onClick, size = 'lg' }) => {
   return (
@@ -82,7 +84,12 @@ const ChatInterface = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // FIX: default the sidebar CLOSED on mobile screens so it doesn't cover
+  // the whole viewport on first load. Desktop still defaults open.
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    () => typeof window !== 'undefined' ? window.innerWidth > MOBILE_BREAKPOINT : true
+  );
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -114,6 +121,18 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // FIX: lock body scroll while the mobile sidebar overlay is open, so the
+  // page behind it doesn't scroll along with it (common mobile UX bug).
+  useEffect(() => {
+    const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+    if (isMobile && isSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isSidebarOpen]);
+
   // ===== SESSION HISTORY LOADING =====
   useEffect(() => {
     const savedSessions = localStorage.getItem('voiceAISessions');
@@ -126,28 +145,25 @@ const ChatInterface = () => {
           setMessages(parsed[0].messages || []);
           setSessionId(parsed[0].id);
           setShowQuickActions((parsed[0].messages?.length || 0) === 0);
-          console.log('📂 Sessions loaded:', parsed.length);
         } else {
           createNewSession();
         }
       } catch (e) {
-        console.error('Error loading sessions:', e);
         createNewSession();
       }
     } else {
       createNewSession();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ===== AUTO-SAVE SESSIONS =====
   useEffect(() => {
     if (autoSave && sessions.length > 0) {
       localStorage.setItem('voiceAISessions', JSON.stringify(sessions));
-      console.log('💾 Sessions auto-saved:', sessions.length);
     }
   }, [sessions, autoSave]);
 
-  // ===== SAVE ON PAGE UNLOAD =====
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (sessions.length > 0 && autoSave) {
@@ -158,19 +174,10 @@ const ChatInterface = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [sessions, autoSave]);
 
-  useEffect(() => {
-    localStorage.setItem('voiceInputEnabled', String(voiceInputEnabled));
-  }, [voiceInputEnabled]);
-  
-  useEffect(() => {
-    localStorage.setItem('soundEnabled', String(soundEnabled));
-  }, [soundEnabled]);
-  
-  useEffect(() => {
-    localStorage.setItem('autoSave', String(autoSave));
-  }, [autoSave]);
+  useEffect(() => { localStorage.setItem('voiceInputEnabled', String(voiceInputEnabled)); }, [voiceInputEnabled]);
+  useEffect(() => { localStorage.setItem('soundEnabled', String(soundEnabled)); }, [soundEnabled]);
+  useEffect(() => { localStorage.setItem('autoSave', String(autoSave)); }, [autoSave]);
 
-  // sendMessage defined before the voice hook needs it in callback
   const sendMessageRef = useRef();
 
   const voice = useVoiceAssistant({
@@ -192,15 +199,15 @@ const ChatInterface = () => {
       messages: [],
       createdAt: new Date().toISOString(),
     };
-    setSessions((prev) => [newSession, ...prev]);
+    setSessions((prev) => {
+      const updated = [newSession, ...prev];
+      if (autoSave) localStorage.setItem('voiceAISessions', JSON.stringify(updated));
+      return updated;
+    });
     setCurrentSession(newSession.id);
     setMessages([]);
     setSessionId(null);
     setShowQuickActions(true);
-    if (autoSave) {
-      localStorage.setItem('voiceAISessions', JSON.stringify([newSession, ...sessions]));
-    }
-    console.log('📂 New session created:', newSession.id);
   };
 
   const selectSession = (id) => {
@@ -210,7 +217,6 @@ const ChatInterface = () => {
       setMessages(session.messages || []);
       setSessionId(id);
       setShowQuickActions((session.messages?.length || 0) === 0);
-      console.log('📂 Session selected:', session.title);
     }
   };
 
@@ -231,7 +237,6 @@ const ChatInterface = () => {
         createNewSession();
       }
     }
-    console.log('🗑️ Session deleted:', id);
   };
 
   const sendMessage = useCallback(async (messageText) => {
@@ -272,7 +277,7 @@ const ChatInterface = () => {
 
       setSessions((prev) => {
         const sessionExists = prev.some((s) => s.id === currentSession || s.id === sessionId);
-        
+
         if (sessionExists) {
           const updatedSessions = prev.map((s) => {
             if (s.id === currentSession || s.id === sessionId) {
@@ -280,35 +285,31 @@ const ChatInterface = () => {
               return {
                 ...s,
                 messages: updatedMessages,
-                title: updatedMessages.length > 0 
-                  ? (updatedMessages[0].content.length > 30 
-                    ? updatedMessages[0].content.substring(0, 30) + '...' 
+                title: updatedMessages.length > 0
+                  ? (updatedMessages[0].content.length > 30
+                    ? updatedMessages[0].content.substring(0, 30) + '...'
                     : updatedMessages[0].content)
                   : t('newChat'),
               };
             }
             return s;
           });
-          
-          if (autoSave) {
-            localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
-          }
-          return updatedSessions;
-        } else {
-          const newSession = {
-            id: Date.now().toString(),
-            title: messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText,
-            messages: [userMessage, assistantMessage],
-            createdAt: new Date().toISOString(),
-          };
-          const updatedSessions = [newSession, ...prev];
-          if (autoSave) {
-            localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
-          }
-          setCurrentSession(newSession.id);
-          setSessionId(newSession.id);
+
+          if (autoSave) localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
           return updatedSessions;
         }
+
+        const newSession = {
+          id: Date.now().toString(),
+          title: messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText,
+          messages: [userMessage, assistantMessage],
+          createdAt: new Date().toISOString(),
+        };
+        const updatedSessions = [newSession, ...prev];
+        if (autoSave) localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
+        setCurrentSession(newSession.id);
+        setSessionId(newSession.id);
+        return updatedSessions;
       });
 
       if (soundEnabled) {
@@ -328,7 +329,8 @@ const ChatInterface = () => {
       setIsLoading(false);
       setIsTyping(false);
     }
-  }, [sessionId, currentSession, t, language, soundEnabled, voice, autoSave]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, currentSession, t, language, soundEnabled, autoSave]);
 
   sendMessageRef.current = sendMessage;
 
@@ -351,10 +353,8 @@ const ChatInterface = () => {
     voice.cancelSpeaking();
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
-  };
-
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+  const closeSidebar = () => setIsSidebarOpen(false); // FIX: real close handler, passed to Sidebar
   const toggleSettings = () => setIsSettingsOpen((v) => !v);
 
   const quickActions = [
@@ -383,12 +383,10 @@ const ChatInterface = () => {
       alert('Voice input is disabled. Enable it in Settings.');
       return;
     }
-    
     if (voice.isListening) {
       voice.stopListening();
       return;
     }
-    
     voice.startListening();
   };
 
@@ -436,6 +434,7 @@ const ChatInterface = () => {
         onSelectSession={selectSession}
         onDeleteSession={deleteSession}
         onToggleSettings={toggleSettings}
+        onClose={closeSidebar}
       />
 
       <div className={`main-chat-area ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
@@ -593,12 +592,9 @@ const ChatInterface = () => {
             </button>
           </form>
           <div className="input-hint">
-            <FaGem /> {t('pressEnter')} · 
-            {isDark ? '🌙 ' + t('darkMode') : '☀️ ' + t('lightMode')} · 
+            <FaGem /> {t('pressEnter')} ·
+            {isDark ? ' 🌙 ' + t('darkMode') : ' ☀️ ' + t('lightMode')} ·
             <FaHeart style={{ color: '#ff2bd6' }} /> {t('madeWithLove')}
-            {voice.supported && (
-              <span className="voice-hint"> · 🎤 {voice.isListening ? 'Listening...' : 'Click mic to speak'}</span>
-            )}
           </div>
         </div>
       </div>

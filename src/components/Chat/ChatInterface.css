@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@400;500;600;700&display=swap');
 
 :root {
   --void: #060910;
@@ -44,7 +44,12 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
   position: fixed;
   inset: 0;
   width: 100vw;
+  /* FIX: 100dvh tracks the *visible* viewport on mobile browsers (accounts
+     for the URL bar collapsing/expanding); 100vh causes jumpy layout and
+     content hidden behind browser chrome on phones. Falls back to 100vh
+     on browsers that don't support dvh. */
   height: 100vh;
+  height: 100dvh;
   display: flex;
   background: radial-gradient(ellipse 1200px 800px at 20% 0%, rgba(124,108,246,0.10), transparent 60%),
               radial-gradient(ellipse 900px 700px at 100% 100%, rgba(0,229,255,0.08), transparent 60%),
@@ -95,20 +100,21 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
   backdrop-filter: blur(14px);
   background: color-mix(in srgb, var(--void) 78%, transparent);
   flex-shrink: 0;
+  gap: 10px;
 }
 
-.header-left { display: flex; align-items: center; gap: 14px; }
+.header-left { display: flex; align-items: center; gap: 14px; min-width: 0; flex-wrap: wrap; }
 
 .menu-btn {
   display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 8px;
+  width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
   border: 1px solid var(--border); background: var(--panel);
   color: var(--text-muted); cursor: pointer; transition: all 0.15s ease;
 }
 .menu-btn:hover { border-color: var(--border-strong); color: var(--cyan); box-shadow: var(--glow-cyan); }
 
-.logo { display: flex; align-items: center; gap: 8px; }
-.logo-icon { font-size: 18px; filter: drop-shadow(0 0 6px var(--cyan)); }
+.logo { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.logo-icon { font-size: 18px; filter: drop-shadow(0 0 6px var(--cyan)); flex-shrink: 0; }
 .logo-text {
   font-family: var(--font-hud);
   font-weight: 700;
@@ -117,9 +123,10 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
   text-transform: uppercase;
   background: linear-gradient(135deg, var(--cyan), var(--violet));
   -webkit-background-clip: text; background-clip: text; color: transparent;
+  white-space: nowrap;
 }
 .logo-badge {
-  display: flex; align-items: center; gap: 4px;
+  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
   font-family: var(--font-hud);
   font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 3px 8px; border-radius: 100px;
@@ -129,7 +136,7 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
 }
 
 .status-badge {
-  display: flex; align-items: center; gap: 6px;
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
   font-family: var(--font-hud);
   font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
   padding: 5px 11px 5px 9px; border-radius: 100px;
@@ -140,7 +147,7 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
 .status-busy .status-dot { animation: pulse-dot 1s ease-in-out infinite; }
 @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
-.header-right { display: flex; align-items: center; gap: 6px; }
+.header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .icon-btn {
   display: flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; border-radius: 8px;
@@ -250,7 +257,7 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
   overflow: hidden;
 }
 
-.messages-area { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+.messages-area { flex: 1; overflow-y: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
 .messages-area::-webkit-scrollbar { width: 8px; }
 .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 100px; }
 
@@ -402,7 +409,14 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
 .quick-action-btn:hover .quick-arrow { opacity: 0.6; transform: translateX(0); }
 
 /* ================= Input ================= */
-.input-area { position: relative; z-index: 2; padding: 10px 24px 18px; flex-shrink: 0; }
+.input-area {
+  position: relative;
+  z-index: 2;
+  padding: 10px 24px 18px;
+  flex-shrink: 0;
+  /* FIX: keep the input bar clear of the iOS home-indicator / gesture bar */
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
 .input-form {
   max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 8px;
   padding: 6px; border-radius: 100px;
@@ -412,6 +426,8 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
 .chat-input {
   flex: 1; border: none; outline: none; background: transparent;
   color: var(--text); font-size: 14px; font-family: var(--font-body); padding: 9px 8px;
+  /* prevent iOS auto-zoom on focus (triggers when font-size < 16px) */
+  font-size: max(14px, 16px);
 }
 .chat-input::placeholder { color: var(--text-muted); }
 .chat-input:disabled { opacity: 0.6; }
@@ -446,6 +462,7 @@ html, body, #root { height: 100%; margin: 0; width: 100%; }
   backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   animation: fade-in 0.15s ease;
+  padding: 16px;
 }
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
@@ -506,17 +523,41 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--cyan); outline-offset: 2px;
 }
 
-@media (max-width: 560px) {
+/* ----- Tablet / small laptop ----- */
+@media (max-width: 900px) {
+  .messages-container { max-width: 100%; }
+}
+
+/* ----- Phones ----- */
+@media (max-width: 640px) {
   .chat-header { padding: 10px 14px; }
   .logo-badge { display: none; }
-  .messages-container { padding: 18px 16px 12px; }
-  .message-content-wrapper { max-width: 88%; }
-  .input-area { padding: 10px 12px 16px; }
-  .quick-actions { padding: 0 16px 12px; }
-  .quick-actions-grid { grid-template-columns: 1fr 1fr; }
-  .voice-orb-xl { width: 110px; height: 110px; }
+  .status-badge { font-size: 9px; padding: 4px 8px 4px 7px; }
+  .messages-container { padding: 16px 14px 10px; gap: 12px; }
+  .message-content-wrapper { max-width: 86%; }
+  .input-area { padding: 8px 12px; padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+  .quick-actions { padding: 0 14px 10px; }
+  .quick-actions-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .quick-action-btn { padding: 9px 10px; font-size: 12px; }
+  .quick-arrow { display: none; }
+  .voice-orb-xl { width: 118px; height: 118px; }
+  .empty-state { padding: 24px 14px 12px; }
   .empty-state h1 { font-size: 19px; }
-  .settings-modal { max-width: 92vw; }
+  .empty-state p { font-size: 12.5px; margin-bottom: 14px; }
+  .feature-grid, .stats-grid { gap: 6px; }
+  .feature-card { padding: 8px 10px; font-size: 11px; }
+  .stat-card { padding: 9px 12px; min-width: 76px; }
+  .settings-modal { max-width: 100%; border-radius: 16px; }
+}
+
+/* ----- Very small phones (≤380px) ----- */
+@media (max-width: 380px) {
+  .logo-text { display: none; }
+  .voice-orb-xl { width: 96px; height: 96px; }
+  .quick-actions-grid { grid-template-columns: 1fr; }
+  .stats-grid { flex-direction: column; align-items: stretch; }
+  .stat-card { flex-direction: row; justify-content: space-between; min-width: 0; }
+  .input-hint { font-size: 9.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
