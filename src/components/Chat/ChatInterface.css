@@ -524,3 +524,64 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     animation: none !important;
   }
 }
+/* ===== Mobile Menu Button Fix ===== */
+/* Add these styles to ensure menu button is visible on mobile */
+
+.menu-btn {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.menu-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+/* Ensure menu button is visible on all screen sizes */
+@media (max-width: 768px) {
+  .menu-btn {
+    display: flex !important;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    background: var(--panel-solid);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+  }
+  
+  .menu-btn:hover {
+    background: var(--cyan-glow);
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+  
+  /* Make header touch-friendly */
+  .chat-header {
+    padding: 8px 12px;
+    min-height: 56px;
+  }
+  
+  .header-left {
+    gap: 10px;
+  }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+  .menu-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+}

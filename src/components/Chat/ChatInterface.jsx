@@ -51,7 +51,6 @@ const LANGUAGE_META = {
   zh: { name: 'Chinese', flag: '🇨🇳' },
 };
 
-// The reactive voice orb — the signature "Jarvis" element
 const VoiceOrb = ({ state, volume = 0, onClick, size = 'lg' }) => {
   return (
     <button
@@ -82,14 +81,13 @@ const ChatInterface = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Start closed on mobile
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeUsers] = useState(42);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  // Working settings state (persisted)
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(
     () => localStorage.getItem('voiceInputEnabled') !== 'false'
   );
@@ -120,9 +118,7 @@ const ChatInterface = () => {
     const handleResize = () => {
       const mobile = window.innerWidth <= 768;
       setIsMobile(mobile);
-      if (mobile) {
-        setIsSidebarOpen(false);
-      } else {
+      if (!mobile) {
         setIsSidebarOpen(true);
       }
     };
@@ -131,6 +127,12 @@ const ChatInterface = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // ===== Toggle sidebar function =====
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+    console.log('Sidebar toggled:', !isSidebarOpen);
+  };
 
   // ===== Mobile sidebar close event =====
   useEffect(() => {
@@ -212,7 +214,6 @@ const ChatInterface = () => {
     localStorage.setItem('autoSave', String(autoSave));
   }, [autoSave]);
 
-  // sendMessage defined before the voice hook needs it in callback
   const sendMessageRef = useRef();
 
   const voice = useVoiceAssistant({
@@ -242,14 +243,12 @@ const ChatInterface = () => {
     if (autoSave) {
       localStorage.setItem('voiceAISessions', JSON.stringify([newSession, ...sessions]));
     }
-    // Close sidebar on mobile when creating new session
     if (isMobile) {
       setIsSidebarOpen(false);
     }
     console.log('📂 New session created:', newSession.id);
   };
 
-  // ===== SELECT SESSION WITH MOBILE CLOSE =====
   const selectSession = (id) => {
     setCurrentSession(id);
     const session = sessions.find((s) => s.id === id);
@@ -257,7 +256,6 @@ const ChatInterface = () => {
       setMessages(session.messages || []);
       setSessionId(id);
       setShowQuickActions((session.messages?.length || 0) === 0);
-      // Close sidebar on mobile
       if (isMobile) {
         setIsSidebarOpen(false);
       }
@@ -402,10 +400,6 @@ const ChatInterface = () => {
     voice.cancelSpeaking();
   };
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
-  };
-
   const toggleSettings = () => setIsSettingsOpen((v) => !v);
 
   const quickActions = [
@@ -489,7 +483,6 @@ const ChatInterface = () => {
         onToggleSettings={toggleSettings}
       />
 
-      {/* Mobile overlay - closes sidebar when clicking outside */}
       {isSidebarOpen && isMobile && (
         <div 
           className="sidebar-overlay active" 
