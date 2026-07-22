@@ -51,6 +51,7 @@ const LANGUAGE_META = {
   zh: { name: 'Chinese', flag: '🇨🇳' },
 };
 
+// The reactive voice orb — the signature "Jarvis" element
 const VoiceOrb = ({ state, volume = 0, onClick, size = 'lg' }) => {
   return (
     <button
@@ -81,13 +82,13 @@ const ChatInterface = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Start closed on mobile
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeUsers] = useState(42);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
+  // Working settings state (persisted)
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(
     () => localStorage.getItem('voiceInputEnabled') !== 'false'
   );
@@ -112,51 +113,6 @@ const ChatInterface = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
-
-  // ===== Mobile detection =====
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
-      setIsMobile(mobile);
-      if (!mobile) {
-        setIsSidebarOpen(true);
-      }
-    };
-
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // ===== Toggle sidebar function =====
-  const toggleSidebar = () => {
-    setIsSidebarOpen(prev => !prev);
-    console.log('Sidebar toggled:', !isSidebarOpen);
-  };
-
-  // ===== Mobile sidebar close event =====
-  useEffect(() => {
-    const handleCloseSidebar = () => {
-      if (isMobile) {
-        setIsSidebarOpen(false);
-      }
-    };
-    
-    document.addEventListener('closeSidebar', handleCloseSidebar);
-    return () => document.removeEventListener('closeSidebar', handleCloseSidebar);
-  }, [isMobile]);
-
-  // ===== Close sidebar on Escape key =====
-  useEffect(() => {
-    const handleEscape = (e) => {
-      if (e.key === 'Escape' && isSidebarOpen && isMobile) {
-        setIsSidebarOpen(false);
-      }
-    };
-    
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isSidebarOpen, isMobile]);
 
   // ===== SESSION HISTORY LOADING =====
   useEffect(() => {
@@ -214,6 +170,7 @@ const ChatInterface = () => {
     localStorage.setItem('autoSave', String(autoSave));
   }, [autoSave]);
 
+  // sendMessage defined before the voice hook needs it in callback
   const sendMessageRef = useRef();
 
   const voice = useVoiceAssistant({
@@ -243,9 +200,6 @@ const ChatInterface = () => {
     if (autoSave) {
       localStorage.setItem('voiceAISessions', JSON.stringify([newSession, ...sessions]));
     }
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
     console.log('📂 New session created:', newSession.id);
   };
 
@@ -256,9 +210,6 @@ const ChatInterface = () => {
       setMessages(session.messages || []);
       setSessionId(id);
       setShowQuickActions((session.messages?.length || 0) === 0);
-      if (isMobile) {
-        setIsSidebarOpen(false);
-      }
       console.log('📂 Session selected:', session.title);
     }
   };
@@ -400,6 +351,10 @@ const ChatInterface = () => {
     voice.cancelSpeaking();
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  };
+
   const toggleSettings = () => setIsSettingsOpen((v) => !v);
 
   const quickActions = [
@@ -483,14 +438,6 @@ const ChatInterface = () => {
         onToggleSettings={toggleSettings}
       />
 
-      {isSidebarOpen && isMobile && (
-        <div 
-          className="sidebar-overlay active" 
-          onClick={() => setIsSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
       <div className={`main-chat-area ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
         <header className="chat-header">
           <div className="header-left">
@@ -500,9 +447,7 @@ const ChatInterface = () => {
             <div className="logo">
               <span className="logo-icon">🎙️</span>
               <span className="logo-text">{t('appName')}</span>
-              {!isMobile && (
-                <span className="logo-badge"><FaStar /> {t('premium')}</span>
-              )}
+              <span className="logo-badge"><FaStar /> {t('premium')}</span>
             </div>
             <span className={`status-badge ${isLoading ? 'status-busy' : ''}`}>
               <span className="status-dot" />
@@ -528,7 +473,7 @@ const ChatInterface = () => {
           <div className="messages-container">
             {messages.length === 0 ? (
               <div className="empty-state">
-                <VoiceOrb state={orbState} volume={voice.volumeLevel} onClick={handleVoiceClick} size={isMobile ? 'lg' : 'xl'} />
+                <VoiceOrb state={orbState} volume={voice.volumeLevel} onClick={handleVoiceClick} size="xl" />
                 <h1>{t('talkAndListen')}</h1>
                 <p>{t('description')}</p>
 
@@ -652,7 +597,7 @@ const ChatInterface = () => {
             {isDark ? '🌙 ' + t('darkMode') : '☀️ ' + t('lightMode')} · 
             <FaHeart style={{ color: '#ff2bd6' }} /> {t('madeWithLove')}
             {voice.supported && (
-              <span className="voice-hint"> · 🎤 {voice.isListening ? 'Listening...' : 'Tap mic to speak'}</span>
+              <span className="voice-hint"> · 🎤 {voice.isListening ? 'Listening...' : 'Click mic to speak'}</span>
             )}
           </div>
         </div>
