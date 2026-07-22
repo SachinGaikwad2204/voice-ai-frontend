@@ -1,128 +1,126 @@
-/* Fonts: Latin (Inter) + Devanagari/Japanese/Chinese so translated text
-   actually has glyphs to render instead of showing "?" tofu boxes. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
-* {
+/* ================= Variables & Theme ================= */
+:root {
+  --void: #060910;
+  --void-2: #0A0F1A;
+  --panel: rgba(16, 22, 36, 0.72);
+  --panel-solid: #101624;
+  --border: rgba(0, 229, 255, 0.18);
+  --border-strong: rgba(0, 229, 255, 0.4);
+  --text: #E8F6FF;
+  --text-muted: #7C93AC;
+  --cyan: #00E5FF;
+  --magenta: #FF2BD6;
+  --violet: #7C6CF6;
+  --mint: #4CD9C0;
+  --danger: #FF4D6D;
+  --glow-cyan: 0 0 24px rgba(0, 229, 255, 0.35);
+  --glow-magenta: 0 0 24px rgba(255, 43, 214, 0.3);
+  --glow-violet: 0 0 24px rgba(124, 108, 246, 0.35);
+  --font-hud: 'Orbitron', 'Rajdhani', sans-serif;
+  --font-body: 'Rajdhani', 'Inter', -apple-system, sans-serif;
+}
+
+[data-theme='light'] {
+  --void: #EEF2F8;
+  --void-2: #E4EAF3;
+  --panel: rgba(255, 255, 255, 0.75);
+  --panel-solid: #FFFFFF;
+  --border: rgba(70, 110, 160, 0.18);
+  --border-strong: rgba(70, 110, 160, 0.35);
+  --text: #101624;
+  --text-muted: #5B6B84;
+  --cyan: #0091B3;
+  --magenta: #C400A0;
+  --violet: #5B4BD6;
+  --mint: #0DA98F;
+  --danger: #E63956;
+  --glow-cyan: 0 0 20px rgba(0, 145, 179, 0.2);
+  --glow-magenta: 0 0 20px rgba(196, 0, 160, 0.16);
+  --glow-violet: 0 0 20px rgba(91, 75, 214, 0.2);
+}
+
+/* ================= Reset & Global Defaults ================= */
+* { 
+  box-sizing: border-box; 
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  transition: background 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html, body, #root {
-  height: 100%;
-  width: 100%;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+html, body, #root { 
+  height: 100%; 
+  width: 100%; 
+  overflow: hidden;
+  background-color: var(--void);
+  color: var(--text);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-primary);
-  transition: background 0.3s ease;
-  /* Prevent iOS Safari from letting the page bounce/scroll behind fixed layouts */
-  overscroll-behavior: none;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--cyan); 
+  outline-offset: 2px;
 }
 
-/* ===== Shared theme variables (used by any non-HUD screens/components) ===== */
-:root {
-  --bg-primary: #f0f2f5;
-  --bg-secondary: #ffffff;
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --text-primary: #1a1a2e;
-  --text-secondary: #555;
-  --text-muted: #888;
-  --border-color: rgba(0, 0, 0, 0.08);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.1);
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-full: 9999px;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ================= App Container & Background Effects ================= */
+.app-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  background: radial-gradient(ellipse 1200px 800px at 20% 0%, rgba(124,108,246,0.12), transparent 65%),
+              radial-gradient(ellipse 900px 700px at 100% 100%, rgba(0,229,255,0.1), transparent 65%),
+              var(--void);
+  position: relative;
+  overflow: hidden;
 }
 
-[data-theme='dark'] {
-  --bg-primary: #0f0f1a;
-  --bg-secondary: #1a1a2e;
-  --bg-glass: rgba(26, 26, 46, 0.9);
-  --text-primary: #e8e8f0;
-  --text-secondary: #a0a0b8;
-  --text-muted: #6a6a80;
-  --border-color: rgba(255, 255, 255, 0.06);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.5);
+.scan-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse 85% 65% at 50% 30%, black 20%, transparent 90%);
+  animation: gridShift 30s linear infinite;
 }
 
-/* ===== Language-aware font stacks =====
-   The LanguageContext sets data-language on <html>. These rules make sure
-   the right script's font is first in the stack, so translated text
-   actually renders instead of showing "?" placeholder glyphs. */
-[data-language='hi'],
-[data-language='hi'] * {
-  font-family: 'Noto Sans Devanagari', 'Inter', -apple-system, sans-serif !important;
+@keyframes gridShift {
+  0% { background-position: 0 0; }
+  100% { background-position: 42px 42px; }
 }
 
-[data-language='ja'],
-[data-language='ja'] * {
-  font-family: 'Noto Sans JP', 'Inter', -apple-system, sans-serif !important;
+.particles-container { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--cyan);
+  opacity: 0.5;
+  animation: particle-drift linear infinite;
+  box-shadow: 0 0 6px currentColor;
 }
 
-[data-language='zh'],
-[data-language='zh'] * {
-  font-family: 'Noto Sans SC', 'Inter', -apple-system, sans-serif !important;
+@keyframes particle-drift {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  20% { opacity: 0.7; }
+  80% { opacity: 0.4; }
+  100% { transform: translateY(-140px) scale(1.2); opacity: 0; }
 }
 
-/* Latin-script languages just use Inter; no override needed (default stack
-   already covers en/es/fr/de). */
-
-/* ===== Emoji support (single definition — no duplicates) ===== */
-.logo-icon,
-.empty-icon,
-.quick-action-icon,
-.feature-icon,
-.session-icon {
-  font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'EmojiOne Color', sans-serif;
-  display: inline-block;
-  vertical-align: middle;
-}
-
-svg {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-/* ===== Animations shared across components ===== */
-@keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
-}
-
-/* ===== Scrollbar ===== */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
-  border-radius: var(--radius-full);
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
-
-/* ===== Mobile safe-area support (notches / home indicator) ===== */
-@supports (padding: max(0px)) {
-  body {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+/* Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .orb-bar, .orb-ring, .particle, .typing-indicator span, .voice-pulse, .status-busy .status-dot, .message, .scan-grid {
+    animation: none !important;
   }
 }

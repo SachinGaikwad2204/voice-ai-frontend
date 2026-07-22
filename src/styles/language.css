@@ -1,60 +1,14 @@
-/* ===== Language Support ===== */
-/* Hindi - Devanagari */
-[data-language="hi"] {
-  font-family: 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', 'Segoe UI', sans-serif !important;
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+/* Multi-language Font Overrides */
+[data-language='hi'], [data-language='hi'] * { 
+  font-family: 'Noto Sans Devanagari', 'Inter', sans-serif !important; 
 }
 
-[data-language="hi"] * {
-  font-family: 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', 'Segoe UI', sans-serif !important;
+[data-language='ja'], [data-language='ja'] * { 
+  font-family: 'Noto Sans JP', 'Inter', sans-serif !important; 
 }
 
-/* Japanese */
-[data-language="ja"] {
-  font-family: 'Noto Sans JP', 'Yu Gothic', 'Meiryo', 'Segoe UI', sans-serif !important;
-}
-
-[data-language="ja"] * {
-  font-family: 'Noto Sans JP', 'Yu Gothic', 'Meiryo', 'Segoe UI', sans-serif !important;
-}
-
-/* Chinese */
-[data-language="zh"] {
-  font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif !important;
-}
-
-[data-language="zh"] * {
-  font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', 'Segoe UI', sans-serif !important;
-}
-
-/* Korean */
-[data-language="ko"] {
-  font-family: 'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', sans-serif !important;
-}
-
-[data-language="ko"] * {
-  font-family: 'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', sans-serif !important;
-}
-
-/* Arabic */
-[data-language="ar"] {
-  font-family: 'Noto Sans Arabic', 'Segoe UI', sans-serif !important;
-}
-
-[data-language="ar"] * {
-  font-family: 'Noto Sans Arabic', 'Segoe UI', sans-serif !important;
-}
-
-/* German */
-[data-language="de"] {
-  font-family: 'Inter', 'Segoe UI', sans-serif !important;
-}
-
-/* French */
-[data-language="fr"] {
-  font-family: 'Inter', 'Segoe UI', sans-serif !important;
-}
-
-/* Spanish */
-[data-language="es"] {
-  font-family: 'Inter', 'Segoe UI', sans-serif !important;
+[data-language='zh'], [data-language='zh'] * { 
+  font-family: 'Noto Sans SC', 'Inter', sans-serif !important; 
 }

@@ -1,39 +1,37 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  FaPaperPlane,
-  FaMicrophone,
-  FaStop,
-  FaTrash,
-  FaRobot,
-  FaUser,
-  FaRegLightbulb,
-  FaSpinner,
-  FaBars,
-  FaClock,
-  FaHandPeace,
-  FaLaugh,
-  FaCalculator,
-  FaSearch,
-  FaMusic,
-  FaBullseye,
-  FaBrain,
-  FaMicrophoneAlt,
-  FaGem,
-  FaLongArrowAltRight,
-  FaCog,
-  FaTimes,
-  FaMoon,
-  FaSun,
-  FaHeart,
-  FaUsers,
-  FaDatabase,
-  FaVolumeUp,
-  FaVolumeMute,
-  FaSave,
-  FaGlobe,
-  FaStar,
-  FaExclamationTriangle,
-} from 'react-icons/fa';
+  Send,
+  Mic,
+  Square,
+  Trash2,
+  Bot,
+  User,
+  Lightbulb,
+  Loader2,
+  Menu,
+  Clock,
+  Smile,
+  Calculator,
+  Search,
+  Music,
+  Target,
+  Brain,
+  Mic2,
+  ArrowRight,
+  Settings,
+  X,
+  Moon,
+  Sun,
+  Heart,
+  Users,
+  Database,
+  Volume2,
+  VolumeX,
+  Save,
+  Globe,
+  AlertTriangle,
+  Sparkles,
+} from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage, SPEECH_LOCALES } from '../../context/LanguageContext';
 import { useVoiceAssistant } from '../../hooks/useVoiceAssistant';
@@ -53,7 +51,6 @@ const LANGUAGE_META = {
 
 const MOBILE_BREAKPOINT = 768;
 
-// The reactive voice orb — the signature "Jarvis" element
 const VoiceOrb = ({ state, volume = 0, onClick, size = 'lg' }) => {
   return (
     <button
@@ -85,8 +82,6 @@ const ChatInterface = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
 
-  // FIX: default the sidebar CLOSED on mobile screens so it doesn't cover
-  // the whole viewport on first load. Desktop still defaults open.
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     () => typeof window !== 'undefined' ? window.innerWidth > MOBILE_BREAKPOINT : true
   );
@@ -95,7 +90,6 @@ const ChatInterface = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeUsers] = useState(42);
 
-  // Working settings state (persisted)
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(
     () => localStorage.getItem('voiceInputEnabled') !== 'false'
   );
@@ -121,8 +115,6 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // FIX: lock body scroll while the mobile sidebar overlay is open, so the
-  // page behind it doesn't scroll along with it (common mobile UX bug).
   useEffect(() => {
     const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
     if (isMobile && isSidebarOpen) {
@@ -133,7 +125,6 @@ const ChatInterface = () => {
     return () => { document.body.style.overflow = ''; };
   }, [isSidebarOpen]);
 
-  // ===== SESSION HISTORY LOADING =====
   useEffect(() => {
     const savedSessions = localStorage.getItem('voiceAISessions');
     if (savedSessions) {
@@ -154,10 +145,8 @@ const ChatInterface = () => {
     } else {
       createNewSession();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ===== AUTO-SAVE SESSIONS =====
   useEffect(() => {
     if (autoSave && sessions.length > 0) {
       localStorage.setItem('voiceAISessions', JSON.stringify(sessions));
@@ -329,8 +318,7 @@ const ChatInterface = () => {
       setIsLoading(false);
       setIsTyping(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, currentSession, t, language, soundEnabled, autoSave]);
+  }, [sessionId, currentSession, t, language, soundEnabled, autoSave, voice]);
 
   sendMessageRef.current = sendMessage;
 
@@ -354,28 +342,28 @@ const ChatInterface = () => {
   };
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
-  const closeSidebar = () => setIsSidebarOpen(false); // FIX: real close handler, passed to Sidebar
+  const closeSidebar = () => setIsSidebarOpen(false);
   const toggleSettings = () => setIsSettingsOpen((v) => !v);
 
   const quickActions = [
-    { icon: <FaHandPeace />, label: t('sayHello'), text: 'Hello!', color: '#00e5ff' },
-    { icon: <FaLaugh />, label: t('tellJoke'), text: 'Tell me a joke', color: '#ff2bd6' },
-    { icon: <FaClock />, label: t('whatTime'), text: 'What time is it?', color: '#7c6cf6' },
-    { icon: <FaCalculator />, label: t('calculate'), text: 'Calculate 25 * 4', color: '#4cd9c0' },
-    { icon: <FaSearch />, label: t('search'), text: 'Search for AI', color: '#ffb347' },
-    { icon: <FaMusic />, label: t('playMusic'), text: 'Play some music', color: '#ff6b6b' },
+    { icon: <Smile size={18} />, label: t('sayHello'), text: 'Hello!', color: '#00e5ff' },
+    { icon: <Smile size={18} />, label: t('tellJoke'), text: 'Tell me a joke', color: '#ff2bd6' },
+    { icon: <Clock size={18} />, label: t('whatTime'), text: 'What time is it?', color: '#7c6cf6' },
+    { icon: <Calculator size={18} />, label: t('calculate'), text: 'Calculate 25 * 4', color: '#4cd9c0' },
+    { icon: <Search size={18} />, label: t('search'), text: 'Search for AI', color: '#ffb347' },
+    { icon: <Music size={18} />, label: t('playMusic'), text: 'Play some music', color: '#ff6b6b' },
   ];
 
   const features = [
-    { icon: <FaBullseye />, label: t('recognizedIntents'), color: '#00e5ff' },
-    { icon: <FaBrain />, label: t('aiCore'), color: '#7c6cf6' },
-    { icon: <FaMicrophoneAlt />, label: t('voiceReady'), color: '#ff2bd6' },
+    { icon: <Target size={20} />, label: t('recognizedIntents'), color: '#00e5ff' },
+    { icon: <Brain size={20} />, label: t('aiCore'), color: '#7c6cf6' },
+    { icon: <Mic2 size={20} />, label: t('voiceReady'), color: '#ff2bd6' },
   ];
 
   const stats = [
-    { icon: <FaUsers />, label: t('activeUsers'), value: activeUsers },
-    { icon: <FaClock />, label: t('responseTime'), value: '< 100ms' },
-    { icon: <FaDatabase />, label: t('messages'), value: messages.length },
+    { icon: <Users size={18} />, label: t('activeUsers'), value: activeUsers },
+    { icon: <Clock size={18} />, label: t('responseTime'), value: '< 100ms' },
+    { icon: <Database size={18} />, label: t('messages'), value: messages.length },
   ];
 
   const handleVoiceClick = () => {
@@ -441,12 +429,11 @@ const ChatInterface = () => {
         <header className="chat-header">
           <div className="header-left">
             <button className="menu-btn" onClick={toggleSidebar} aria-label="Toggle sidebar">
-              <FaBars />
+              <Menu size={20} />
             </button>
             <div className="logo">
-              <span className="logo-icon">🎙️</span>
-              <span className="logo-text">{t('appName')}</span>
-              <span className="logo-badge"><FaStar /> {t('premium')}</span>
+              <Bot className="logo-icon-svg" size={22} style={{ color: '#00e5ff' }} />
+              <span className="logo-text">Cognix</span>
             </div>
             <span className={`status-badge ${isLoading ? 'status-busy' : ''}`}>
               <span className="status-dot" />
@@ -460,10 +447,10 @@ const ChatInterface = () => {
               aria-label="Toggle spoken replies"
               title={t('soundEffects')}
             >
-              {soundEnabled ? <FaVolumeUp /> : <FaVolumeMute />}
+              {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
             </button>
             <button className="icon-btn" onClick={clearChat} aria-label="Clear chat" title="Clear conversation">
-              <FaTrash />
+              <Trash2 size={18} />
             </button>
           </div>
         </header>
@@ -478,7 +465,7 @@ const ChatInterface = () => {
 
                 {!voice.supported && (
                   <div className="hud-warning">
-                    <FaExclamationTriangle /> {t('micUnsupported')}
+                    <AlertTriangle size={16} /> {t('micUnsupported')}
                   </div>
                 )}
 
@@ -507,7 +494,7 @@ const ChatInterface = () => {
                   className={'message ' + (msg.role === 'user' ? 'user-message' : 'assistant-message')}
                 >
                   <div className="message-avatar">
-                    {msg.role === 'user' ? <FaUser /> : <FaRobot />}
+                    {msg.role === 'user' ? <User size={18} /> : <Bot size={18} />}
                   </div>
                   <div className="message-content-wrapper">
                     <div className={`message-content ${msg.isError ? 'message-error' : ''}`}>
@@ -520,7 +507,7 @@ const ChatInterface = () => {
                       )}
                     </div>
                     <div className="message-timestamp">
-                      <FaClock /> {msg.timestamp}
+                      <Clock size={12} /> {msg.timestamp}
                     </div>
                   </div>
                 </div>
@@ -529,7 +516,7 @@ const ChatInterface = () => {
 
             {isTyping && (
               <div className="message assistant-message">
-                <div className="message-avatar"><FaRobot /></div>
+                <div className="message-avatar"><Bot size={18} /></div>
                 <div className="message-content-wrapper">
                   <div className="message-content">
                     <div className="typing-indicator">
@@ -545,7 +532,7 @@ const ChatInterface = () => {
 
         {showQuickActions && messages.length === 0 && (
           <div className="quick-actions">
-            <div className="quick-actions-label"><FaRegLightbulb /> {t('tryThese')}</div>
+            <div className="quick-actions-label"><Lightbulb size={16} /> {t('tryThese')}</div>
             <div className="quick-actions-grid">
               {quickActions.map((action, index) => (
                 <button
@@ -556,7 +543,7 @@ const ChatInterface = () => {
                 >
                   <span className="quick-action-icon" style={{ color: action.color }}>{action.icon}</span>
                   {action.label}
-                  <FaLongArrowAltRight className="quick-arrow" />
+                  <ArrowRight size={14} className="quick-arrow" />
                 </button>
               ))}
             </div>
@@ -572,7 +559,7 @@ const ChatInterface = () => {
               disabled={!voiceInputEnabled}
               title={voiceInputEnabled ? (voice.isListening ? 'Stop listening' : 'Start voice input') : 'Voice input disabled in settings'}
             >
-              {voice.isListening ? <FaStop /> : <FaMicrophone />}
+              {voice.isListening ? <Square size={18} /> : <Mic size={18} />}
               {voice.isListening && <span className="voice-pulse" />}
             </button>
 
@@ -588,13 +575,13 @@ const ChatInterface = () => {
             />
 
             <button type="submit" className="send-btn" disabled={isLoading || !input.trim()}>
-              {isLoading ? <FaSpinner className="spinner" /> : <FaPaperPlane />}
+              {isLoading ? <Loader2 size={18} className="spinner" /> : <Send size={18} />}
             </button>
           </form>
           <div className="input-hint">
-            <FaGem /> {t('pressEnter')} ·
+            <Sparkles size={14} /> {t('pressEnter')} ·
             {isDark ? ' 🌙 ' + t('darkMode') : ' ☀️ ' + t('lightMode')} ·
-            <FaHeart style={{ color: '#ff2bd6' }} /> {t('madeWithLove')}
+            <Heart size={14} style={{ color: '#ff2bd6' }} /> {t('madeWithLove')}
           </div>
         </div>
       </div>
@@ -603,14 +590,14 @@ const ChatInterface = () => {
         <div className="settings-overlay" onClick={toggleSettings}>
           <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
             <div className="settings-header">
-              <h2><FaCog /> {t('settingsTitle')}</h2>
+              <h2><Settings size={20} /> {t('settingsTitle')}</h2>
               <button className="settings-close" onClick={toggleSettings} aria-label="Close settings">
-                <FaTimes />
+                <X size={20} />
               </button>
             </div>
             <div className="settings-content">
               <div className="settings-item">
-                <span>{isDark ? <FaMoon /> : <FaSun />} {t('darkModeSetting')}</span>
+                <span>{isDark ? <Moon size={18} /> : <Sun size={18} />} {t('darkModeSetting')}</span>
                 <label className="switch">
                   <input type="checkbox" checked={isDark} onChange={toggleTheme} />
                   <span className="slider"></span>
@@ -618,7 +605,7 @@ const ChatInterface = () => {
               </div>
 
               <div className="settings-item">
-                <span><FaMicrophoneAlt /> {t('voiceInput')}</span>
+                <span><Mic2 size={18} /> {t('voiceInput')}</span>
                 <label className="switch">
                   <input
                     type="checkbox"
@@ -633,7 +620,7 @@ const ChatInterface = () => {
               </div>
 
               <div className="settings-item">
-                <span><FaSave /> {t('autoSave')}</span>
+                <span><Save size={18} /> {t('autoSave')}</span>
                 <label className="switch">
                   <input type="checkbox" checked={autoSave} onChange={(e) => setAutoSave(e.target.checked)} />
                   <span className="slider"></span>
@@ -641,7 +628,7 @@ const ChatInterface = () => {
               </div>
 
               <div className="settings-item">
-                <span><FaVolumeUp /> {t('soundEffects')}</span>
+                <span><Volume2 size={18} /> {t('soundEffects')}</span>
                 <label className="switch">
                   <input
                     type="checkbox"
@@ -656,7 +643,7 @@ const ChatInterface = () => {
               </div>
 
               <div className="settings-item">
-                <span><FaGlobe /> {t('language')}</span>
+                <span><Globe size={18} /> {t('language')}</span>
                 <select className="settings-select" value={language} onChange={handleLanguageChange}>
                   {Object.keys(LANGUAGE_META).map((key) => (
                     <option key={key} value={key}>
@@ -668,7 +655,7 @@ const ChatInterface = () => {
 
               {!voice.supported && (
                 <div className="hud-warning settings-warning">
-                  <FaExclamationTriangle /> {t('micUnsupported')}
+                  <AlertTriangle size={16} /> {t('micUnsupported')}
                 </div>
               )}
             </div>

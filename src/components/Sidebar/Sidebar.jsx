@@ -1,16 +1,15 @@
 import React from 'react';
 import {
-  FaPlus,
-  FaHistory,
-  FaComments,
-  FaTrash,
-  FaCog,
-  FaSignOutAlt,
-  FaMoon,
-  FaSun,
-  FaGem,
-  FaRocket,
-} from 'react-icons/fa';
+  Plus,
+  History,
+  MessageSquare,
+  Trash2,
+  Settings,
+  LogOut,
+  Moon,
+  Sun,
+  Bot,
+} from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import './Sidebar.css';
@@ -23,14 +22,14 @@ const Sidebar = ({
   onSelectSession,
   onDeleteSession,
   onToggleSettings,
-  onClose, // FIX: real callback prop instead of a broken window CustomEvent
+  onClose,
 }) => {
   const { isDark, toggleTheme } = useTheme();
   const { t } = useLanguage();
 
   const handleSelect = (id) => {
     onSelectSession(id);
-    onClose?.(); // auto-close on mobile after picking a session
+    onClose?.();
   };
 
   const handleNewSession = () => {
@@ -40,7 +39,6 @@ const Sidebar = ({
 
   return (
     <>
-      {/* Mobile backdrop — only rendered/interactive when sidebar is open */}
       <div
         className={`sidebar-overlay ${isOpen ? 'active' : ''}`}
         onClick={() => onClose?.()}
@@ -51,16 +49,15 @@ const Sidebar = ({
         <div className="sidebar-header">
           <div className="logo-container">
             <div className="logo-icon-wrapper">
-              <FaRocket />
+              <Bot size={22} />
             </div>
             <div className="logo-text-wrapper">
-              <span className="logo-title">{t('appName')}</span>
-              <span className="logo-subtitle"><FaGem /> {t('premium')}</span>
+              <span className="logo-title">Cognix</span>
             </div>
           </div>
 
           <button className="new-chat-btn" onClick={handleNewSession}>
-            <FaPlus />
+            <Plus size={18} />
             <span>{t('newChat')}</span>
           </button>
         </div>
@@ -68,7 +65,7 @@ const Sidebar = ({
         <div className="sidebar-content">
           <div className="sessions-section">
             <div className="sessions-header">
-              <FaHistory /> {t('recentChats')}
+              <History size={16} /> {t('recentChats')}
             </div>
             <div className="sessions-list">
               {sessions && sessions.length > 0 ? (
@@ -78,7 +75,7 @@ const Sidebar = ({
                     className={'session-item ' + (currentSession === session.id ? 'active' : '')}
                     onClick={() => handleSelect(session.id)}
                   >
-                    <FaComments className="session-icon" />
+                    <MessageSquare size={16} className="session-icon" />
                     <span className="session-title">{session.title || t('newChat')}</span>
                     <button
                       className="session-delete"
@@ -88,13 +85,13 @@ const Sidebar = ({
                       }}
                       aria-label="Delete session"
                     >
-                      <FaTrash />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 ))
               ) : (
                 <div className="empty-sessions">
-                  <FaComments />
+                  <MessageSquare size={24} />
                   <p>{t('noChats')}</p>
                   <span>{t('startChat')}</span>
                 </div>
@@ -105,15 +102,15 @@ const Sidebar = ({
 
         <div className="sidebar-footer">
           <button className="sidebar-footer-item" onClick={toggleTheme}>
-            {isDark ? <FaSun /> : <FaMoon />}
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
             <span>{isDark ? t('lightMode') : t('darkMode')}</span>
           </button>
           <button className="sidebar-footer-item" onClick={onToggleSettings}>
-            <FaCog />
+            <Settings size={18} />
             <span>{t('settings')}</span>
           </button>
           <button className="sidebar-footer-item">
-            <FaSignOutAlt />
+            <LogOut size={18} />
             <span>{t('signOut')}</span>
           </button>
           <div className="sidebar-footer-item status">
