@@ -51,10 +51,8 @@ const LANGUAGE_META = {
   zh: { name: 'Chinese', flag: '🇨🇳' },
 };
 
-// The reactive voice orb — the signature "Jarvis" element. Its rings expand
-// and its glow intensifies based on listening / speaking / thinking state.
+// The reactive voice orb — the signature "Jarvis" element
 const VoiceOrb = ({ state, volume = 0, onClick, size = 'lg' }) => {
-  // state: 'idle' | 'listening' | 'speaking' | 'thinking'
   return (
     <button
       className={`voice-orb voice-orb-${size} orb-${state}`}
@@ -84,11 +82,12 @@ const ChatInterface = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(true);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Start closed on mobile
   const [sessions, setSessions] = useState([]);
   const [currentSession, setCurrentSession] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeUsers] = useState(42);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Working settings state (persisted)
   const [voiceInputEnabled, setVoiceInputEnabled] = useState(
@@ -116,6 +115,48 @@ const ChatInterface = () => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // ===== Mobile detection =====
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // ===== Mobile sidebar toggle event =====
+  useEffect(() => {
+    const handleToggleSidebar = () => {
+      setIsSidebarOpen(prev => !prev);
+    };
+    
+    document.addEventListener('toggleSidebar', handleToggleSidebar);
+    
+    return () => {
+      document.removeEventListener('toggleSidebar', handleToggleSidebar);
+    };
+  }, []);
+
+  // ===== Close sidebar on Escape key =====
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isSidebarOpen && isMobile) {
+        setIsSidebarOpen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isSidebarOpen, isMobile]);
+
   // ===== SESSION HISTORY LOADING =====
   useEffect(() => {
     const savedSessions = localStorage.getItem('voiceAISessions');
@@ -130,7 +171,6 @@ const ChatInterface = () => {
           setShowQuickActions((parsed[0].messages?.length || 0) === 0);
           console.log('📂 Sessions loaded:', parsed.length);
         } else {
-          // Create default session if no sessions exist
           createNewSession();
         }
       } catch (e) {
@@ -138,7 +178,6 @@ const ChatInterface = () => {
         createNewSession();
       }
     } else {
-      // Create default session if no saved sessions
       createNewSession();
     }
   }, []);
@@ -201,9 +240,12 @@ const ChatInterface = () => {
     setMessages([]);
     setSessionId(null);
     setShowQuickActions(true);
-    // Save immediately
     if (autoSave) {
       localStorage.setItem('voiceAISessions', JSON.stringify([newSession, ...sessions]));
+    }
+    // Close sidebar on mobile when creating new session
+    if (isMobile) {
+      setIsSidebarOpen(false);
     }
     console.log('📂 New session created:', newSession.id);
   };
@@ -215,6 +257,10 @@ const ChatInterface = () => {
       setMessages(session.messages || []);
       setSessionId(id);
       setShowQuickActions((session.messages?.length || 0) === 0);
+      // Close sidebar on mobile when selecting session
+      if (isMobile) {
+        setIsSidebarOpen(false);
+      }
       console.log('📂 Session selected:', session.title);
     }
   };
@@ -275,7 +321,6 @@ const ChatInterface = () => {
       };
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Update sessions with new messages
       setSessions((prev) => {
         const sessionExists = prev.some((s) => s.id === currentSession || s.id === sessionId);
         
@@ -296,13 +341,11 @@ const ChatInterface = () => {
             return s;
           });
           
-          // Auto-save
           if (autoSave) {
             localStorage.setItem('voiceAISessions', JSON.stringify(updatedSessions));
           }
           return updatedSessions;
         } else {
-          // Create new session if none exists
           const newSession = {
             id: Date.now().toString(),
             title: messageText.length > 30 ? messageText.substring(0, 30) + '...' : messageText,
@@ -359,6 +402,12 @@ const ChatInterface = () => {
     voice.cancelSpeaking();
   };
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => !prev);
+  };
+
+  const toggleSettings = () => setIsSettingsOpen((v) => !v);
+
   const quickActions = [
     { icon: <FaHandPeace />, label: t('sayHello'), text: 'Hello!', color: '#00e5ff' },
     { icon: <FaLaugh />, label: t('tellJoke'), text: 'Tell me a joke', color: '#ff2bd6' },
@@ -380,24 +429,19 @@ const ChatInterface = () => {
     { icon: <FaDatabase />, label: t('messages'), value: messages.length },
   ];
 
-
-const handleVoiceClick = () => {
-  if (!voiceInputEnabled) {
-    alert('Voice input is disabled. Enable it in Settings.');
-    return;
-  }
-  
-  if (voice.isListening) {
-    voice.stopListening();
-    return;
-  }
-  
-  // Start listening
-  voice.startListening();
-};
-
-  const toggleSidebar = () => setIsSidebarOpen((v) => !v);
-  const toggleSettings = () => setIsSettingsOpen((v) => !v);
+  const handleVoiceClick = () => {
+    if (!voiceInputEnabled) {
+      alert('Voice input is disabled. Enable it in Settings.');
+      return;
+    }
+    
+    if (voice.isListening) {
+      voice.stopListening();
+      return;
+    }
+    
+    voice.startListening();
+  };
 
   const orbState = useMemo(() => {
     if (voice.isListening) return 'listening';
@@ -445,7 +489,16 @@ const handleVoiceClick = () => {
         onToggleSettings={toggleSettings}
       />
 
-      <div className={'main-chat-area ' + (isSidebarOpen ? 'sidebar-open' : 'sidebar-closed')}>
+      {/* Mobile overlay - closes sidebar when clicking outside */}
+      {isSidebarOpen && isMobile && (
+        <div 
+          className="sidebar-overlay active" 
+          onClick={() => setIsSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <div className={`main-chat-area ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
         <header className="chat-header">
           <div className="header-left">
             <button className="menu-btn" onClick={toggleSidebar} aria-label="Toggle sidebar">
@@ -454,7 +507,9 @@ const handleVoiceClick = () => {
             <div className="logo">
               <span className="logo-icon">🎙️</span>
               <span className="logo-text">{t('appName')}</span>
-              <span className="logo-badge"><FaStar /> {t('premium')}</span>
+              {!isMobile && (
+                <span className="logo-badge"><FaStar /> {t('premium')}</span>
+              )}
             </div>
             <span className={`status-badge ${isLoading ? 'status-busy' : ''}`}>
               <span className="status-dot" />
@@ -480,7 +535,7 @@ const handleVoiceClick = () => {
           <div className="messages-container">
             {messages.length === 0 ? (
               <div className="empty-state">
-                <VoiceOrb state={orbState} volume={voice.volumeLevel} onClick={handleVoiceClick} size="xl" />
+                <VoiceOrb state={orbState} volume={voice.volumeLevel} onClick={handleVoiceClick} size={isMobile ? 'lg' : 'xl'} />
                 <h1>{t('talkAndListen')}</h1>
                 <p>{t('description')}</p>
 
@@ -575,7 +630,7 @@ const handleVoiceClick = () => {
           <form className="input-form" onSubmit={handleSubmit}>
             <button
               type="button"
-              className={'voice-btn ' + (voice.isListening ? 'recording' : '') + (!voiceInputEnabled ? ' disabled' : '')}
+              className={`voice-btn ${voice.isListening ? 'recording' : ''} ${!voiceInputEnabled ? ' disabled' : ''}`}
               onClick={handleVoiceClick}
               disabled={!voiceInputEnabled}
               title={voiceInputEnabled ? (voice.isListening ? 'Stop listening' : 'Start voice input') : 'Voice input disabled in settings'}
@@ -600,7 +655,12 @@ const handleVoiceClick = () => {
             </button>
           </form>
           <div className="input-hint">
-            <FaGem /> {t('pressEnter')} · {isDark ? '🌙 ' + t('darkMode') : '☀️ ' + t('lightMode')} · <FaHeart style={{ color: '#ff2bd6' }} /> {t('madeWithLove')}
+            <FaGem /> {t('pressEnter')} · 
+            {isDark ? '🌙 ' + t('darkMode') : '☀️ ' + t('lightMode')} · 
+            <FaHeart style={{ color: '#ff2bd6' }} /> {t('madeWithLove')}
+            {voice.supported && (
+              <span className="voice-hint"> · 🎤 {voice.isListening ? 'Listening...' : 'Tap mic to speak'}</span>
+            )}
           </div>
         </div>
       </div>

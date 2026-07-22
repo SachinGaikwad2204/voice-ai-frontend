@@ -120,3 +120,27 @@
   width: 6px; height: 6px; border-radius: 50%; background: currentColor;
   box-shadow: 0 0 8px currentColor;
 }
+/* Add overlay styles to Sidebar.css */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+.sidebar-overlay.active {
+  display: block;
+}
+
+/* Mobile responsive for sidebar */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    display: none;
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+  }
+}
