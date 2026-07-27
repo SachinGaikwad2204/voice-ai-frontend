@@ -169,8 +169,6 @@ const ChatInterface = () => {
 
   const sendMessageRef = useRef();
 
-  // FIX: Updated voice assistant callback to append finalized transcripts seamlessly
-  // instead of overwriting the input box completely, avoiding stutter/truncation bugs.
   const voice = useVoiceAssistant({
     lang: speechLocale,
     onResult: (transcript, isFinal) => {
@@ -179,6 +177,11 @@ const ChatInterface = () => {
         sendMessageRef.current?.(transcript);
       } else {
         setInput(transcript);
+      }
+    },
+    onError: (error) => {
+      if (error === 'no-speech') {
+        console.warn('No speech detected. Please speak clearly or try again.');
       }
     },
   });
