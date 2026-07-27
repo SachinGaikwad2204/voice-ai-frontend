@@ -31,7 +31,7 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     if (!SpeechRecognition) return;
 
     const recognition = new SpeechRecognition();
-    recognition.continuous = false;
+    recognition.continuous = true;       // Updated to true to prevent abrupt closing on short pauses
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
     recognition.lang = lang;
@@ -45,14 +45,14 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
 
     recognition.onend = () => {
       console.log('🎤 Recognition ended');
-      setIsListening(false);
-      isListeningRef.current = false;
-      setVolumeLevel(0);
       
-      // Clean up stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
+      // Clean up stream if manually stopped
+      if (!isListeningRef.current) {
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        setVolumeLevel(0);
       }
     };
 
@@ -64,8 +64,10 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
         if (result.isFinal && transcript.length > 0) {
           console.log('🎤 Final:', transcript);
           onResultRef.current?.(transcript);
-          // Stop after getting result
+          // Stop after getting final result
           try { recognition.stop(); } catch (e) {}
+          setIsListening(false);
+          isListeningRef.current = false;
         } else if (transcript.length > 0) {
           console.log('🎤 Interim:', transcript);
           // Update volume for visual feedback
@@ -78,17 +80,33 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       console.warn('⚠️ Recognition error:', event.error);
       
       if (event.error === 'no-speech') {
-        console.log('🔇 No speech detected - try speaking louder or click mic again');
+        console.log('🔇 No speech detected - auto-restarting recognition listener...');
+        // Automatically attempt a soft restart instead of killing the listener state completely
+        try {
+          recognition.stop();
+          setTimeout(() => {
+            if (isListeningRef.current) {
+              try { recognition.start(); } catch (e) {}
+            }
+          }, 200);
+        } catch (e) {}
+      } else if (event.error === 'not-allowed') {
+        console.log('❌ Microphone access denied - please allow microphone access');
         setIsListening(false);
         isListeningRef.current = false;
         setVolumeLevel(0);
-      } else if (event.error === 'not-allowed') {
-        console.log('❌ Microphone access denied - please allow microphone access');
         alert('Please allow microphone access to use voice commands.\n\n' +
               'Click the camera/mic icon in your browser address bar and select "Allow".');
       } else if (event.error === 'audio-capture') {
         console.log('❌ No microphone found - please connect a microphone');
+        setIsListening(false);
+        isListeningRef.current = false;
+        setVolumeLevel(0);
         alert('No microphone found. Please connect a microphone and try again.');
+      } else {
+        setIsListening(false);
+        isListeningRef.current = false;
+        setVolumeLevel(0);
       }
     };
 
@@ -125,6 +143,8 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
       });
       
       streamRef.current = stream;
+      isListeningRef.current = true;
+      setIsListening(true);
       
       // Start recognition
       try {
@@ -139,12 +159,16 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
             console.log('🎤 Restarted listening...');
           } catch (e3) {
             console.error('Failed to start recognition:', e3);
+            setIsListening(false);
+            isListeningRef.current = false;
           }
         }, 500);
       }
       
     } catch (err) {
       console.error('❌ Microphone error:', err);
+      setIsListening(false);
+      isListeningRef.current = false;
       alert('Please allow microphone access to use voice commands.\n\n' +
             '1. Click the camera/mic icon in the address bar\n' +
             '2. Select "Allow" for microphone access\n' +
@@ -153,6 +177,7 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
   }, []);
 
   const stopListening = useCallback(() => {
+    isListeningRef.current = false;
     try {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
@@ -165,7 +190,6 @@ export function useVoiceAssistant({ lang = 'en-US', onResult } = {}) {
     }
     
     setIsListening(false);
-    isListeningRef.current = false;
     setVolumeLevel(0);
     console.log('🎤 Stopped listening');
   }, []);
