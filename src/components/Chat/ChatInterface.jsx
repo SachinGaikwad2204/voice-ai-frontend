@@ -560,6 +560,9 @@ const ChatInterface = () => {
         )}
 
         <div className="input-area">
+          <div className="info-notice" style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #888)', textAlign: 'center', marginBottom: '6px' }}>
+            ⏳ Please allow up to 5 minutes to respond.
+          </div>
           <form className="input-form" onSubmit={handleSubmit}>
             <button
               type="button"
