@@ -1,70 +1,46 @@
-# Getting Started with Create React App
+# Cognix — Multi-Lingual Voice AI Assistant (Frontend)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A voice-first assistant that runs in the browser. Speak or type a command, and it recognises the intent and replies in text and speech, in seven languages.
 
-## Available Scripts
+**Live demo:** https://voice-ai-frontend-neon.vercel.app/
+**Backend repository:** https://github.com/SachinGaikwad2204/ai-ml-voice-assistant
 
-In the project directory, you can run:
+![Cognix voice assistant](docs/screenshot.png)
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Voice input and spoken replies using the browser's Web Speech API (speech recognition and speech synthesis)
+- Seven languages: English, Spanish, French, Hindi, German, Japanese and Chinese, each with its own speech locale
+- 14 recognised intents, including greetings, time, weather, jokes, music, search, calculation and translation
+- Session log, so earlier conversations can be reopened
+- Dark and light themes, and a mobile-first responsive layout
+- Settings for voice input, spoken replies and auto-saving sessions
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Tech stack
 
-### `npm test`
+React 18, Axios, Framer Motion, Web Speech API, Vercel
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## How it works
 
-### `npm run build`
+The React app captures speech with the Web Speech API and sends the transcript, session ID and language to the Spring Boot backend at `POST /api/voice/chat`. The backend returns the detected intent and a reply, which the app displays and reads aloud.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Run locally
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+git clone https://github.com/SachinGaikwad2204/voice-ai-frontend.git
+cd voice-ai-frontend
+npm install
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The app opens at http://localhost:3000. By default it calls a backend at `http://localhost:8080/api/voice`. To use a different backend, set `REACT_APP_API_URL` in a `.env` file.
 
-### `npm run eject`
+Voice recognition needs Chrome or Edge.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Note on the demo
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+The demo backend runs on a free hosting plan that sleeps when idle, so the first reply after a quiet period can take a few minutes.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Author
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Sachin Gaikwad — [Portfolio](https://my-portfolio-ten-orpin-42.vercel.app/) · [GitHub](https://github.com/SachinGaikwad2204)
